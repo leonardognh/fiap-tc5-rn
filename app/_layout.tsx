@@ -21,18 +21,7 @@ export default function RootLayout() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      {!user ? (
-        <>
-          <Stack.Screen name="login" />
-          <Stack.Screen name="register" />
-          <Redirect href="/login" />
-        </>
-      ) : (
-        <>
-          <Stack.Screen name="index" />
-          <Redirect href="/" />
-        </>
-      )}
+      {!user ? <Redirect href="/(auth)/login" /> : <Redirect href="/(app)/boards" />}
     </Stack>
   );
 }
