@@ -1,27 +1,40 @@
-import { useAuthStore } from '@/lib/state/auth.store';
-import { Redirect, Stack } from 'expo-router';
+import { AuthProvider, useAuth } from '@/lib/contexts/AuthContext';
+import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
-export default function RootLayout() {
-  const { user, initializing, connect } = useAuthStore();
+function RootLayoutNav() {
+  const { user, loading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
 
   useEffect(() => {
-    const unsub = connect();
-    return unsub;
-  }, [connect]);
+    if (loading) return;
 
-  if (initializing) {
+    const inAuthGroup = segments[0] === '(auth)';
+
+    if (!user && !inAuthGroup) {
+      router.replace('/(auth)/login');
+    } else if (user && inAuthGroup) {
+      router.replace('/(tabs)');
+    }
+  }, [user, loading, segments]);
+
+  if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" />
       </View>
     );
   }
 
+  return <Slot />;
+}
+
+export default function RootLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      {!user ? <Redirect href="/(auth)/login" /> : <Redirect href="/(app)/boards" />}
-    </Stack>
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
   );
 }

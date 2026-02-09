@@ -1,4 +1,4 @@
-import { UserPreferences, UserPreferencesPatch } from './user-preferences';
+import { UserPreferences, UserPreferencesPatch } from '../contracts/user-preferences';
 
 export type Unsubscribe = () => void;
 

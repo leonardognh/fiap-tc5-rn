@@ -2,15 +2,15 @@ import {
   DEFAULT_USER_PREFERENCES,
   UserPreferences,
   UserPreferencesPatch,
-} from '@/lib/core/settings/user-preferences';
+} from '@/lib/core/contracts/user-preferences';
 import {
   Unsubscribe,
   UserPreferencesRepository,
 } from '@/lib/core/settings/user-preferences.repository';
 import { doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
-import { firestore } from './firebase.client';
+import { db } from './firebase.client';
 
-const prefsDoc = (uid: string) => doc(firestore, 'userPreferences', uid);
+const prefsDoc = (uid: string) => doc(db, 'userPreferences', uid);
 
 export class FirestoreUserPreferencesRepository implements UserPreferencesRepository {
   watch(
@@ -22,7 +22,6 @@ export class FirestoreUserPreferencesRepository implements UserPreferencesReposi
       prefsDoc(uid),
       async (snap) => {
         if (!snap.exists()) {
-          // cria defaults na primeira vez (sem drama)
           await setDoc(prefsDoc(uid), DEFAULT_USER_PREFERENCES, { merge: true });
           onChange(DEFAULT_USER_PREFERENCES);
           return;
@@ -36,7 +35,6 @@ export class FirestoreUserPreferencesRepository implements UserPreferencesReposi
   }
 
   async update(uid: string, patch: UserPreferencesPatch): Promise<void> {
-    // garante doc existente
     await setDoc(prefsDoc(uid), DEFAULT_USER_PREFERENCES, { merge: true });
     await updateDoc(prefsDoc(uid), patch as any);
   }

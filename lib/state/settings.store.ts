@@ -1,59 +1,65 @@
-import { UpdateUserPreferencesUseCase } from '@/lib/application/settings/use-cases/update-user-preferences.use-case';
-import { WatchUserPreferencesUseCase } from '@/lib/application/settings/use-cases/watch-user-preferences.use-case';
-import {
-  DEFAULT_USER_PREFERENCES,
-  UserPreferences,
-  UserPreferencesPatch,
-} from '@/lib/core/settings/user-preferences';
-import { Unsubscribe } from '@/lib/core/settings/user-preferences.repository';
-import { FirestoreUserPreferencesRepository } from '@/lib/infrastructure/firebase/user-preferences.firestore.repository';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import { DEFAULT_USER_PREFERENCES, UserPreferences } from '../core/contracts/user-preferences';
 
-type SettingsState = {
-  preferences: UserPreferences;
-  loading: boolean;
-  saving: boolean;
-  error: string | null;
-
-  connect: (uid: string) => Unsubscribe;
-  update: (uid: string, patch: UserPreferencesPatch) => Promise<void>;
-  clearError: () => void;
+export type UserProfile = {
+  name: string;
+  email: string;
+  avatarUrl: string;
 };
 
-const repo = new FirestoreUserPreferencesRepository();
-const watchUC = new WatchUserPreferencesUseCase(repo);
-const updateUC = new UpdateUserPreferencesUseCase(repo);
+type SettingsState = {
+  profile: UserProfile;
+  preferences: UserPreferences;
+  _hasHydrated: boolean;
 
-export const useSettingsStore = create<SettingsState>((set) => ({
-  preferences: DEFAULT_USER_PREFERENCES,
-  loading: false,
-  saving: false,
-  error: null,
+  setProfile: (patch: Partial<UserProfile>) => void;
+  setPreferences: (patch: Partial<UserPreferences>) => void;
+  setCognitiveAlerts: (patch: Partial<UserPreferences['cognitiveAlerts']>) => void;
+  setHasHydrated: (state: boolean) => void;
 
-  clearError: () => set({ error: null }),
+  resetPreferences: () => void;
+};
 
-  connect: (uid: string) => {
-    set({ loading: true, error: null });
+const DEFAULT_PROFILE: UserProfile = {
+  name: '',
+  email: '',
+  avatarUrl: '',
+};
 
-    const unsub = watchUC.execute(
-      uid,
-      (prefs) => set({ preferences: prefs, loading: false }),
-      (e) =>
-        set({ error: (e as any)?.message ?? 'Falha ao carregar preferências.', loading: false })
-    );
+export const useSettingsStore = create<SettingsState>()(
+  persist(
+    (set) => ({
+      profile: DEFAULT_PROFILE,
+      preferences: DEFAULT_USER_PREFERENCES,
+      _hasHydrated: false,
 
-    return unsub;
-  },
+      setProfile: (patch) => set((s) => ({ profile: { ...s.profile, ...patch } })),
 
-  update: async (uid, patch) => {
-    set({ saving: true, error: null });
-    try {
-      await updateUC.execute(uid, patch);
-      // o watch vai atualizar o estado — não inventa moda aqui
-    } catch (e: any) {
-      set({ error: e?.message ?? 'Falha ao salvar preferências.' });
-    } finally {
-      set({ saving: false });
+      setPreferences: (patch) =>
+        set((s) => ({
+          preferences: { ...s.preferences, ...patch },
+        })),
+
+      setCognitiveAlerts: (patch) =>
+        set((s) => ({
+          preferences: {
+            ...s.preferences,
+            cognitiveAlerts: { ...s.preferences.cognitiveAlerts, ...patch },
+          },
+        })),
+
+      setHasHydrated: (state) => set({ _hasHydrated: state }), // ✅ Adicione isso
+
+      resetPreferences: () => set({ preferences: DEFAULT_USER_PREFERENCES }),
+    }),
+    {
+      name: 'mindease.settings',
+      storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
-  },
-}));
+  )
+);

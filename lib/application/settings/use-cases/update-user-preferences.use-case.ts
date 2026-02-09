@@ -1,4 +1,4 @@
-import { UserPreferencesPatch } from '@/lib/core/settings/user-preferences';
+import { UserPreferencesPatch } from '@/lib/core/contracts/user-preferences';
 import { UserPreferencesRepository } from '@/lib/core/settings/user-preferences.repository';
 
 export class UpdateUserPreferencesUseCase {

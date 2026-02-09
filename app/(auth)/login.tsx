@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { LoginScreen } from '../screens/auth/login.screen';
+import { LoginScreen } from '../../components/screens/auth/login.screen';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -7,7 +7,7 @@ export default function LoginPage() {
   return (
     <LoginScreen
       onGoRegister={() => router.push('/(auth)/register')}
-      onGoHome={() => router.replace('/(app)/boards')}
+      onGoHome={() => router.replace('/(tabs)')}
     />
   );
 }

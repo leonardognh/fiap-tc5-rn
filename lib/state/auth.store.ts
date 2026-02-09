@@ -7,13 +7,18 @@ import {
   updateProfile,
 } from 'firebase/auth';
 import { create } from 'zustand';
-import { firebaseAuth } from '../infrastructure/firebase/firebase.client';
+import { auth } from '../infrastructure/firebase/firebase.client';
+
+type Unsub = (() => void) | null;
 
 type AuthState = {
   user: User | null;
   initializing: boolean;
   loading: boolean;
   error: string | null;
+
+  _unsub: Unsub;
+  _hasConnected: boolean;
 
   connect: () => () => void;
   login: (email: string, password: string) => Promise<void>;
@@ -48,11 +53,41 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loading: false,
   error: null,
 
+  _unsub: null,
+  _hasConnected: false,
+
   connect: () => {
-    const unsub = onAuthStateChanged(firebaseAuth, (user) => {
-      set({ user, initializing: false });
-    });
-    return unsub;
+    const { _hasConnected, _unsub } = get();
+
+    if (_hasConnected && _unsub) return _unsub;
+    if (_hasConnected && !_unsub) return () => {};
+
+    set({ _hasConnected: true });
+
+    const unsub = onAuthStateChanged(
+      auth,
+      (user) => {
+        set({ user, initializing: false });
+      },
+      (err) => {
+        console.error('onAuthStateChanged error:', err);
+        set({
+          user: null,
+          initializing: false,
+          error: normalizeAuthError(err),
+        });
+      }
+    );
+
+    set({ _unsub: unsub });
+
+    return () => {
+      try {
+        unsub?.();
+      } finally {
+        set({ _unsub: null, _hasConnected: false });
+      }
+    };
   },
 
   clearError: () => set({ error: null }),
@@ -60,7 +95,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   login: async (email, password) => {
     set({ loading: true, error: null });
     try {
-      await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
+      await signInWithEmailAndPassword(auth, email.trim(), password);
     } catch (e: any) {
       set({ error: normalizeAuthError(e) });
     } finally {
@@ -71,7 +106,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   register: async (name, email, password) => {
     set({ loading: true, error: null });
     try {
-      const cred = await createUserWithEmailAndPassword(firebaseAuth, email.trim(), password);
+      const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
 
       const displayName = name.trim();
       if (displayName) {
@@ -87,7 +122,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     set({ loading: true, error: null });
     try {
-      await signOut(firebaseAuth);
+      await signOut(auth);
+      set({ user: null });
     } catch (e: any) {
       set({ error: normalizeAuthError(e) });
     } finally {

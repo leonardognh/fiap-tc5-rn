@@ -1,4 +1,4 @@
-import { UserPreferences } from '@/lib/core/settings/user-preferences';
+import { UserPreferences } from '@/lib/core/contracts/user-preferences';
 import {
   Unsubscribe,
   UserPreferencesRepository,
