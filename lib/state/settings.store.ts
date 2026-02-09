@@ -20,6 +20,7 @@ type SettingsState = {
   setHasHydrated: (state: boolean) => void;
 
   resetPreferences: () => void;
+  resetAll: () => void;
 };
 
 const DEFAULT_PROFILE: UserProfile = {
@@ -50,9 +51,15 @@ export const useSettingsStore = create<SettingsState>()(
           },
         })),
 
-      setHasHydrated: (state) => set({ _hasHydrated: state }), // ✅ Adicione isso
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
 
       resetPreferences: () => set({ preferences: DEFAULT_USER_PREFERENCES }),
+
+      resetAll: () =>
+        set({
+          profile: DEFAULT_PROFILE,
+          preferences: DEFAULT_USER_PREFERENCES,
+        }),
     }),
     {
       name: 'mindease.settings',

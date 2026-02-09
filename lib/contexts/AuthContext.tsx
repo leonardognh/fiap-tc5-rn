@@ -1,148 +1,143 @@
 import {
   User,
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
-  createUserWithEmailAndPassword,
-  AuthError,
+  updateProfile,
 } from 'firebase/auth';
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { auth } from '../infrastructure/firebase/firebase.client';
-import { useSettingsStore } from '../state/settings.store';
+import {
+  PropsWithChildren,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
-interface AuthContextData {
+import { auth } from '@/lib/infrastructure/firebase/firebase.client';
+import { useSettingsStore } from '@/lib/state/settings.store';
+
+type AuthContextValue = {
   user: User | null;
+  initializing: boolean;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
   error: string | null;
+
+  login: (email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
   clearError: () => void;
-}
+};
 
-const AuthContext = createContext<AuthContextData>({} as AuthContextData);
+const AuthContext = createContext<AuthContextValue | null>(null);
 
-/**
- * Traduz erros do Firebase Auth para português
- */
-function translateAuthError(error: AuthError): string {
-  const errorMessages: Record<string, string> = {
-    'auth/invalid-email': 'Email inválido',
-    'auth/user-disabled': 'Usuário desabilitado',
-    'auth/user-not-found': 'Usuário não encontrado',
-    'auth/wrong-password': 'Senha incorreta',
-    'auth/email-already-in-use': 'Email já está em uso',
-    'auth/weak-password': 'Senha muito fraca. Use pelo menos 6 caracteres',
-    'auth/operation-not-allowed': 'Operação não permitida',
-    'auth/too-many-requests': 'Muitas tentativas. Tente novamente mais tarde',
-    'auth/network-request-failed': 'Erro de conexão. Verifique sua internet',
-    'auth/invalid-credential': 'Credenciais inválidas',
-  };
+const normalizeAuthError = (e: any): string => {
+  const code = String(e?.code ?? '');
+  switch (code) {
+    case 'auth/invalid-email':
+      return 'Email inválido.';
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+      return 'Email ou senha incorretos.';
+    case 'auth/email-already-in-use':
+      return 'Esse email já está em uso.';
+    case 'auth/weak-password':
+      return 'Senha fraca.';
+    default:
+      return 'Erro de autenticação.';
+  }
+};
 
-  return errorMessages[error.code] || 'Erro desconhecido ao autenticar';
-}
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initializing, setInitializing] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const setProfile = useSettingsStore((s) => s.setProfile);
+  const { setProfile, resetAll } = useSettingsStore.getState();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      (user) => {
-        setUser(user);
-        setLoading(false);
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setInitializing(false);
 
-        // Sincroniza perfil com settings store
-        if (user) {
-          setProfile({
-            email: user.email || '',
-            name: user.displayName || '',
-            avatarUrl: user.photoURL || '',
-          });
-        }
-      },
-      (error) => {
-        console.error('Auth state change error:', error);
-        setError('Erro ao verificar autenticação');
-        setLoading(false);
+      if (u) {
+        setProfile({
+          name: u.displayName ?? '',
+          email: u.email ?? '',
+          avatarUrl: u.photoURL ?? '',
+        });
+      } else {
+        resetAll();
       }
-    );
+    });
 
-    return unsubscribe;
-  }, [setProfile]);
+    return unsub;
+  }, [setProfile, resetAll]);
 
-  const signIn = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     try {
+      setLoading(true);
       setError(null);
       await signInWithEmailAndPassword(auth, email, password);
-    } catch (err) {
-      const authError = err as AuthError;
-      const message = translateAuthError(authError);
-      setError(message);
-      throw new Error(message);
+    } catch (e) {
+      setError(normalizeAuthError(e));
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const signUp = async (email: string, password: string) => {
+  const register = useCallback(async (name: string, email: string, password: string) => {
     try {
+      setLoading(true);
       setError(null);
-      await createUserWithEmailAndPassword(auth, email, password);
-    } catch (err) {
-      const authError = err as AuthError;
-      const message = translateAuthError(authError);
-      setError(message);
-      throw new Error(message);
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(cred.user, { displayName: name });
+    } catch (e) {
+      setError(normalizeAuthError(e));
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
+      setLoading(true);
       setError(null);
       await signOut(auth);
-      
-      // Limpa o perfil do store
-      setProfile({
-        email: '',
-        name: '',
-        avatarUrl: '',
-      });
-    } catch (err) {
-      const authError = err as AuthError;
-      const message = translateAuthError(authError);
-      setError(message);
-      throw new Error(message);
+    } catch (e) {
+      setError(normalizeAuthError(e));
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
   const clearError = () => setError(null);
 
-  return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        loading, 
-        signIn, 
-        signUp, 
-        logout, 
-        error, 
-        clearError 
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      user,
+      initializing,
+      loading,
+      error,
+      login,
+      register,
+      logout,
+      clearError,
+    }),
+    [user, initializing, loading, error, login, register, logout]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  
-  if (!context) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    throw new Error('useAuth deve ser usado dentro de <AuthProvider />');
   }
-  
-  return context;
-};
+  return ctx;
+}
