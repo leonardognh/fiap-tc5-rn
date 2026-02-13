@@ -1,3 +1,31 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    /* No Light Mode: Primary é Preto */
+    --color-primary-500: 0 0 0;
+    --color-primary-600: 0 0 0;
+    --color-primary-700: 38 38 38;
+
+    --color-background-0: 255 255 255;
+    --color-typography-900: 23 23 23;
+    --color-typography-500: 115 115 115;
+
+    --color-outline-300: 212 212 212;
+  }
+
+  .dark:root {
+    /* No Dark Mode: Primary é Branco */
+    --color-primary-500: 255 255 255;
+    --color-primary-600: 255 255 255;
+    --color-primary-700: 212 212 212;
+
+    --color-background-0: 10 10 10; /* Preto mais profundo */
+    --color-typography-900: 255 255 255;
+    --color-typography-500: 163 163 163;
+
+    --color-outline-300: 64 64 64;
+  }
+}
