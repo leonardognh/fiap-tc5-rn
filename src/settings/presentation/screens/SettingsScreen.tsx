@@ -6,6 +6,8 @@ import { Alert, Image, ScrollView } from "react-native";
 import { Box } from "@/components/ui/box";
 import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
 import { HStack } from "@/components/ui/hstack";
+import { Switch } from '@/components/ui/switch';
+
 import { Input, InputField } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
@@ -104,6 +106,9 @@ export function SettingsScreen() {
     updatePreferences({ language });
     i18n.changeLanguage(language);
   };
+
+  const setAnimations = (enabled: boolean) =>
+    updatePreferences({ animations: enabled });
 
   return (
     <Box className="flex-1 bg-background-0">
@@ -256,6 +261,21 @@ export function SettingsScreen() {
                   );
                 })}
               </HStack>
+            </VStack>
+
+            <VStack space="sm">
+              <HStack className="items-center justify-between">
+                <Text size="sm" className="text-typography-600">
+                  {t("settings.animations")}
+                </Text>
+                <Switch
+                  value={preferences.animations}
+                  onValueChange={setAnimations}
+                />
+              </HStack>
+              <Text size="xs" className="text-typography-500">
+                {t("settings.animations_hint")}
+              </Text>
             </VStack>
 
             <VStack space="sm">

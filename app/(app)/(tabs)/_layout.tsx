@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { Alert, Pressable, View } from "react-native";
+import {
+  Alert,
+  Easing,
+  Pressable,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Tabs, useRouter } from "expo-router";
 import { LogOut } from "lucide-react-native";
@@ -9,6 +15,7 @@ import Colors from "@/constants/Colors";
 import { useColorScheme } from "@/components/useColorScheme";
 import { useClientOnlyValue } from "@/components/useClientOnlyValue";
 import { useAuthStore } from "@/src/auth/store/auth.store";
+import { useSettingsStore } from "@/src/settings/store/settings.store";
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>["name"];
@@ -21,8 +28,11 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
   const logout = useAuthStore((s) => s.logout);
+  const preferences = useSettingsStore((s) => s.preferences);
   const iconColor = Colors[colorScheme ?? "light"].text;
   const [logoutOpen, setLogoutOpen] = useState(false);
+  const screenWidth = useWindowDimensions().width;
+  const animationsEnabled = preferences.animations;
 
   const handleLogout = async () => {
     try {
@@ -41,6 +51,33 @@ export default function TabLayout() {
         screenOptions={{
           tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
           headerShown: useClientOnlyValue(false, true),
+          sceneStyleInterpolator: animationsEnabled
+            ? ({ current }) => ({
+                sceneStyle: {
+                  opacity: current.progress.interpolate({
+                    inputRange: [-1, 0, 1],
+                    outputRange: [0.6, 1, 0.6],
+                  }),
+                  transform: [
+                    {
+                      translateX: current.progress.interpolate({
+                        inputRange: [-1, 0, 1],
+                        outputRange: [-screenWidth, 0, screenWidth],
+                      }),
+                    },
+                  ],
+                },
+              })
+            : undefined,
+          transitionSpec: animationsEnabled
+            ? {
+                animation: "timing",
+                config: {
+                  duration: 520,
+                  easing: Easing.bezier(0.16, 1, 0.3, 1),
+                },
+              }
+            : undefined,
           headerRight: () => (
             <View style={{ marginRight: 12 }}>
               <Pressable
