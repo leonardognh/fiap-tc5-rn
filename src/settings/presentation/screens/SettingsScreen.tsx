@@ -1,14 +1,13 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Image, Platform, ScrollView, Switch } from "react-native";
-import { Eye, EyeOff } from "lucide-react-native";
+﻿import { Eye, EyeOff } from "lucide-react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { Alert, Image, ScrollView, Switch } from "react-native";
 
 import { Box } from "@/components/ui/box";
-import { VStack } from "@/components/ui/vstack";
-import { HStack } from "@/components/ui/hstack";
-import { Heading } from "@/components/ui/heading";
-import { Text } from "@/components/ui/text";
 import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
+import { HStack } from "@/components/ui/hstack";
 import { Input, InputField } from "@/components/ui/input";
+import { Text } from "@/components/ui/text";
+import { VStack } from "@/components/ui/vstack";
 
 import { useAuthStore } from "@/src/auth/store/auth.store";
 import { useSettingsStore } from "../../store/settings.store";
@@ -19,7 +18,13 @@ import type {
   UserPreferences,
 } from "../../types/settings";
 
-const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+const Section = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => (
   <Box className="rounded-2xl border border-outline-200 bg-background-0 p-4">
     <VStack space="md">
       <Text size="md" className="text-typography-900 font-semibold">
@@ -114,7 +119,9 @@ export function SettingsScreen() {
           <Section title="Perfil">
             <HStack space="md" className="items-center">
               <Image
-                source={{ uri: profile?.photoURL || "https://placehold.co/96x96" }}
+                source={{
+                  uri: profile?.photoURL || "https://placehold.co/96x96",
+                }}
                 style={{ width: 56, height: 56, borderRadius: 12 }}
               />
               <VStack space="xs" className="flex-1">
@@ -126,11 +133,19 @@ export function SettingsScreen() {
                 </Text>
               </VStack>
               {!isEditing ? (
-                <Button size="sm" variant="outline" onPress={() => setIsEditing(true)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onPress={() => setIsEditing(true)}
+                >
                   <ButtonText>Editar</ButtonText>
                 </Button>
               ) : (
-                <Button size="sm" variant="outline" onPress={() => setIsEditing(false)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onPress={() => setIsEditing(false)}
+                >
                   <ButtonText>Cancelar</ButtonText>
                 </Button>
               )}
@@ -212,7 +227,9 @@ export function SettingsScreen() {
                     size="sm"
                     onPress={handleSaveProfile}
                     isDisabled={!canSaveProfile}
-                    className={!canSaveProfile ? "bg-background-300" : undefined}
+                    className={
+                      !canSaveProfile ? "bg-background-300" : undefined
+                    }
                   >
                     <ButtonText>Salvar</ButtonText>
                   </Button>
@@ -233,7 +250,8 @@ export function SettingsScreen() {
                 />
               </HStack>
               <Text size="xs" className="text-typography-500">
-                Quando ativo, reduz animações, simplifica a interface e desativa alertas.
+                Quando ativo, reduz animações, simplifica a interface e desativa
+                alertas.
               </Text>
             </VStack>
           </Section>
@@ -282,7 +300,9 @@ export function SettingsScreen() {
                       onPress={() => setLanguage(lang)}
                       className={selected ? "bg-primary-600" : undefined}
                     >
-                      <ButtonText>{lang === "pt-BR" ? "PT-BR" : "EN-US"}</ButtonText>
+                      <ButtonText>
+                        {lang === "pt-BR" ? "PT-BR" : "EN-US"}
+                      </ButtonText>
                     </Button>
                   );
                 })}
@@ -306,7 +326,9 @@ export function SettingsScreen() {
               </Text>
               <Switch
                 value={preferences.contrast === "high"}
-                onValueChange={(v) => updatePreferences({ contrast: v ? "high" : "normal" })}
+                onValueChange={(v) =>
+                  updatePreferences({ contrast: v ? "high" : "normal" })
+                }
                 disabled={preferences.focusMode}
               />
             </HStack>
@@ -317,37 +339,35 @@ export function SettingsScreen() {
               </Text>
               <Switch
                 value={preferences.spaceScale === 2}
-                onValueChange={(v) => updatePreferences({ spaceScale: v ? 2 : 1 })}
+                onValueChange={(v) =>
+                  updatePreferences({ spaceScale: v ? 2 : 1 })
+                }
                 disabled={preferences.focusMode}
               />
             </HStack>
 
-            <VStack space="xs">
+            <HStack className="items-center justify-between">
               <Text size="sm" className="text-typography-600">
-                Escala de fonte
+                Tamanho da fonte grande
               </Text>
-              <Input className="border-outline-300 rounded-xl">
-                <InputField
-                  keyboardType={Platform.OS === "web" ? "default" : "numeric"}
-                  value={String(preferences.fontScale)}
-                  onChangeText={(value) => {
-                    const v = Number(value);
-                    if (!Number.isNaN(v)) updatePreferences({ fontScale: v });
-                  }}
-                  editable={!preferences.focusMode}
-                />
-              </Input>
-            </VStack>
+              <Switch
+                value={preferences.fontScale === 2}
+                onValueChange={(value) =>
+                  updatePreferences({ fontScale: value ? 2 : 1 })
+                }
+                disabled={preferences.focusMode}
+              />
+            </HStack>
           </Section>
 
           <Section title="Perfil cognitivo">
             <HStack className="items-center justify-between">
               <Text size="sm" className="text-typography-600">
-                Complexidade mínima
+                Complexidade
               </Text>
               <Switch
-                value={preferences.uiComplexity === "minimum"}
-                onValueChange={(v) => setComplexity(v ? "minimum" : "normal")}
+                value={preferences.uiComplexity === "normal"}
+                onValueChange={(v) => setComplexity(v ? "normal" : "minimum")}
                 disabled={preferences.focusMode}
               />
             </HStack>
@@ -357,8 +377,10 @@ export function SettingsScreen() {
                 Modo resumo
               </Text>
               <Switch
-                value={preferences.detailsMode === "summary"}
-                onValueChange={(v) => setDetailsMode(v ? "summary" : "detailed")}
+                value={preferences.detailsMode === "detailed"}
+                onValueChange={(v) =>
+                  setDetailsMode(v ? "detailed" : "summary")
+                }
                 disabled={preferences.focusMode}
               />
             </HStack>
@@ -373,7 +395,10 @@ export function SettingsScreen() {
                 value={preferences.cognitiveAlerts.enabled}
                 onValueChange={(v) =>
                   updatePreferences({
-                    cognitiveAlerts: { ...preferences.cognitiveAlerts, enabled: v },
+                    cognitiveAlerts: {
+                      ...preferences.cognitiveAlerts,
+                      enabled: v,
+                    },
                   })
                 }
                 disabled={preferences.focusMode}
@@ -387,7 +412,10 @@ export function SettingsScreen() {
                 value={preferences.cognitiveAlerts.pomodoroPause}
                 onValueChange={(v) =>
                   updatePreferences({
-                    cognitiveAlerts: { ...preferences.cognitiveAlerts, pomodoroPause: v },
+                    cognitiveAlerts: {
+                      ...preferences.cognitiveAlerts,
+                      pomodoroPause: v,
+                    },
                   })
                 }
                 disabled={preferences.focusMode}
@@ -411,7 +439,6 @@ export function SettingsScreen() {
               />
             </HStack>
           </Section>
-
         </VStack>
       </ScrollView>
     </Box>

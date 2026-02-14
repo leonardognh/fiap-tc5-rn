@@ -68,7 +68,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         set({ profile });
         done();
       },
-      (err) => set({ error: err.message ?? "Falha ao carregar perfil.", loading: false }),
+      (err) =>
+        set({
+          error: err.message ?? "Falha ao carregar perfil.",
+          loading: false,
+        }),
     );
 
     const unsubPrefs = repo.watchUserPreferences(
@@ -77,7 +81,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         set({ preferences });
         done();
       },
-      (err) => set({ error: err.message ?? "Falha ao carregar preferências.", loading: false }),
+      (err) =>
+        set({
+          error: err.message ?? "Falha ao carregar preferências.",
+          loading: false,
+        }),
     );
 
     const unsubscribe = () => {
@@ -129,7 +137,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         ...(typeof patch.displayName === "string"
           ? { displayName: patch.displayName.trim() || "Sem nome" }
           : {}),
-        ...("photoURL" in patch ? { photoURL: patch.photoURL || undefined } : {}),
+        ...("photoURL" in patch
+          ? { photoURL: patch.photoURL || undefined }
+          : {}),
         ...("email" in patch ? { email: patch.email || undefined } : {}),
       };
 
@@ -169,7 +179,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     try {
       await repo.updateUserPreferencesDoc(userId, patch);
     } catch (err: any) {
-      set({ preferences: prev, error: err?.message ?? "Falha ao atualizar preferências." });
+      set({
+        preferences: prev,
+        error: err?.message ?? "Falha ao atualizar preferências.",
+      });
     }
   },
 
@@ -182,6 +195,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         detailsMode: "summary",
         contrast: "normal",
         animations: false,
+        spaceScale: 1,
+        fontScale: 1,
         cognitiveAlerts: {
           ...prefs.cognitiveAlerts,
           enabled: false,
