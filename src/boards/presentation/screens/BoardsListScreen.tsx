@@ -1,5 +1,5 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Platform, Pressable, ScrollView } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { Pressable, ScrollView } from "react-native";
 import { router } from "expo-router";
 import {
   Archive,
@@ -9,6 +9,7 @@ import {
   Search,
 } from "lucide-react-native";
 
+import { ConfirmModal } from "@/components/modals/ConfirmModal";
 import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";
 import { HStack } from "@/components/ui/hstack";
@@ -21,6 +22,14 @@ import { useAuthStore } from "@/src/auth/store/auth.store";
 import { useBoardsStore } from "../../store/boards.store";
 import type { Board } from "../../types/boards";
 import { BoardFormModal } from "../components/BoardFormModal";
+
+type ConfirmState = {
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  destructive?: boolean;
+  onConfirm: () => void;
+};
 
 export function BoardsListScreen() {
   const user = useAuthStore((s) => s.user);
@@ -39,6 +48,7 @@ export function BoardsListScreen() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<Board | null>(null);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
 
   useEffect(() => {
     return subscribe(user?.uid ?? null);
@@ -53,30 +63,19 @@ export function BoardsListScreen() {
     [],
   );
 
-  const confirmAction = (title: string, message: string, onConfirm: () => void) => {
-    if (Platform.OS === "web" && typeof window !== "undefined") {
-      const ok = window.confirm(`${title}\n\n${message}`);
-      if (ok) onConfirm();
-      return;
-    }
-
-    Alert.alert(title, message, [
-      { text: "Cancelar", style: "cancel" },
-      { text: "Confirmar", onPress: onConfirm },
-    ]);
-  };
+  const confirmAction = (state: ConfirmState) => setConfirmState(state);
 
   const onConfirmArchive = (board: Board) => {
-    const actionLabel =
-      board.status === "archived" ? "desarquivar" : "arquivar";
-    confirmAction(
-      "Confirmar",
-      `Deseja ${actionLabel} o board "${board.title}"?`,
-      () =>
-        board.status === "archived"
-          ? unarchiveBoard(board.id)
-          : archiveBoard(board.id),
-    );
+    const isArchive = board.status !== "archived";
+    const actionLabel = isArchive ? "arquivar" : "desarquivar";
+    confirmAction({
+      title: "Confirmar",
+      message: `Deseja ${actionLabel} o board "${board.title}"?`,
+      confirmLabel: isArchive ? "Arquivar" : "Desarquivar",
+      destructive: isArchive,
+      onConfirm: () =>
+        isArchive ? archiveBoard(board.id) : unarchiveBoard(board.id),
+    });
   };
 
   return (
@@ -95,7 +94,6 @@ export function BoardsListScreen() {
           </Input>
           <Button onPress={() => setCreateOpen(true)} size="sm">
             <ButtonIcon as={Plus} />
-            <ButtonText>Novo board</ButtonText>
           </Button>
         </HStack>
 
@@ -148,7 +146,7 @@ export function BoardsListScreen() {
               <Text className="text-typography-600">
                 {query.status === "archived"
                   ? "Nenhum board arquivado."
-                  : "Nenhum board encontrado. Crie o primeiro para começar."}
+                  : "Nenhum board encontrado. Crie o primeiro para come�ar."}
               </Text>
             </Box>
           ) : null}
@@ -262,6 +260,17 @@ export function BoardsListScreen() {
           setEditing(null);
         }}
       />
+
+      <ConfirmModal
+        visible={!!confirmState}
+        title={confirmState?.title ?? ""}
+        message={confirmState?.message ?? ""}
+        confirmLabel={confirmState?.confirmLabel}
+        destructive={confirmState?.destructive}
+        onClose={() => setConfirmState(null)}
+        onConfirm={confirmState?.onConfirm ?? (() => {})}
+      />
     </Box>
   );
 }
+
