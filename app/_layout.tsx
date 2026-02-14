@@ -57,7 +57,7 @@ function RootLayoutNav() {
     const inAuth = group === "(auth)";
     const inApp = group === "(app)";
 
-    if (!user && inApp) router.replace("/");
+    if (!user && inApp) router.replace("/login");
     else if (user && inAuth) router.replace("/(app)/(tabs)");
   }, [user, initializing, segments]);
 

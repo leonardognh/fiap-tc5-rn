@@ -1,7 +1,7 @@
 import React from "react";
 import { Alert, Platform, Pressable, View } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import { LogOut } from "lucide-react-native";
 
 import Colors from "@/constants/Colors";
@@ -18,23 +18,29 @@ function TabBarIcon(props: {
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const router = useRouter();
   const logout = useAuthStore((s) => s.logout);
   const iconColor = Colors[colorScheme ?? "light"].text;
   const confirmLogout = () => {
-    const handleLogout = () => {
-      void logout();
+    const handleLogout = async () => {
+      try {
+        await logout();
+        router.replace("/login");
+      } catch {
+        Alert.alert("Erro", "Não foi possível sair. Tente novamente.");
+      }
     };
 
     if (Platform.OS === "web") {
       if (typeof window !== "undefined" && window.confirm("Deseja sair do app?")) {
-        handleLogout();
+        void handleLogout();
       }
       return;
     }
 
     Alert.alert("Sair", "Deseja sair do app?", [
       { text: "Cancelar", style: "cancel" },
-      { text: "Sair", style: "destructive", onPress: handleLogout },
+      { text: "Sair", style: "destructive", onPress: () => void handleLogout() },
     ]);
   };
 
