@@ -1,6 +1,6 @@
 ﻿import { Eye, EyeOff } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Image, ScrollView, Switch } from "react-native";
+import { Alert, Image, ScrollView } from "react-native";
 
 import { Box } from "@/components/ui/box";
 import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
@@ -11,12 +11,7 @@ import { VStack } from "@/components/ui/vstack";
 
 import { useAuthStore } from "@/src/auth/store/auth.store";
 import { useSettingsStore } from "../../store/settings.store";
-import type {
-  DetailsMode,
-  ThemeMode,
-  UiComplexity,
-  UserPreferences,
-} from "../../types/settings";
+import type { ThemeMode, UserPreferences } from "../../types/settings";
 
 const Section = ({
   title,
@@ -45,7 +40,6 @@ export function SettingsScreen() {
     connect,
     updateProfile,
     updatePreferences,
-    setFocusMode,
     clearError,
   } = useSettingsStore();
 
@@ -103,10 +97,6 @@ export function SettingsScreen() {
   const setTheme = (mode: ThemeMode) => updatePreferences({ theme: mode });
   const setLanguage = (language: UserPreferences["language"]) =>
     updatePreferences({ language });
-  const setComplexity = (uiComplexity: UiComplexity) =>
-    updatePreferences({ uiComplexity });
-  const setDetailsMode = (detailsMode: DetailsMode) =>
-    updatePreferences({ detailsMode });
 
   return (
     <Box className="flex-1 bg-background-0">
@@ -238,24 +228,6 @@ export function SettingsScreen() {
             ) : null}
           </Section>
 
-          <Section title="Modo foco">
-            <VStack space="sm">
-              <HStack className="items-center justify-between">
-                <Text size="sm" className="text-typography-600">
-                  Ativar modo foco
-                </Text>
-                <Switch
-                  value={preferences.focusMode}
-                  onValueChange={(v) => setFocusMode(v)}
-                />
-              </HStack>
-              <Text size="xs" className="text-typography-500">
-                Quando ativo, reduz animações, simplifica a interface e desativa
-                alertas.
-              </Text>
-            </VStack>
-          </Section>
-
           <Section title="Aparência">
             <VStack space="sm">
               <Text size="sm" className="text-typography-600">
@@ -308,136 +280,6 @@ export function SettingsScreen() {
                 })}
               </HStack>
             </VStack>
-
-            <HStack className="items-center justify-between">
-              <Text size="sm" className="text-typography-600">
-                Animações
-              </Text>
-              <Switch
-                value={preferences.animations}
-                onValueChange={(v) => updatePreferences({ animations: v })}
-                disabled={preferences.focusMode}
-              />
-            </HStack>
-
-            <HStack className="items-center justify-between">
-              <Text size="sm" className="text-typography-600">
-                Alto contraste
-              </Text>
-              <Switch
-                value={preferences.contrast === "high"}
-                onValueChange={(v) =>
-                  updatePreferences({ contrast: v ? "high" : "normal" })
-                }
-                disabled={preferences.focusMode}
-              />
-            </HStack>
-
-            <HStack className="items-center justify-between">
-              <Text size="sm" className="text-typography-600">
-                Espaçamento amplo
-              </Text>
-              <Switch
-                value={preferences.spaceScale === 2}
-                onValueChange={(v) =>
-                  updatePreferences({ spaceScale: v ? 2 : 1 })
-                }
-                disabled={preferences.focusMode}
-              />
-            </HStack>
-
-            <HStack className="items-center justify-between">
-              <Text size="sm" className="text-typography-600">
-                Tamanho da fonte grande
-              </Text>
-              <Switch
-                value={preferences.fontScale === 2}
-                onValueChange={(value) =>
-                  updatePreferences({ fontScale: value ? 2 : 1 })
-                }
-                disabled={preferences.focusMode}
-              />
-            </HStack>
-          </Section>
-
-          <Section title="Perfil cognitivo">
-            <HStack className="items-center justify-between">
-              <Text size="sm" className="text-typography-600">
-                Complexidade
-              </Text>
-              <Switch
-                value={preferences.uiComplexity === "normal"}
-                onValueChange={(v) => setComplexity(v ? "normal" : "minimum")}
-                disabled={preferences.focusMode}
-              />
-            </HStack>
-
-            <HStack className="items-center justify-between">
-              <Text size="sm" className="text-typography-600">
-                Modo resumo
-              </Text>
-              <Switch
-                value={preferences.detailsMode === "detailed"}
-                onValueChange={(v) =>
-                  setDetailsMode(v ? "detailed" : "summary")
-                }
-                disabled={preferences.focusMode}
-              />
-            </HStack>
-          </Section>
-
-          <Section title="Alertas">
-            <HStack className="items-center justify-between">
-              <Text size="sm" className="text-typography-600">
-                Ativar alertas
-              </Text>
-              <Switch
-                value={preferences.cognitiveAlerts.enabled}
-                onValueChange={(v) =>
-                  updatePreferences({
-                    cognitiveAlerts: {
-                      ...preferences.cognitiveAlerts,
-                      enabled: v,
-                    },
-                  })
-                }
-                disabled={preferences.focusMode}
-              />
-            </HStack>
-            <HStack className="items-center justify-between">
-              <Text size="sm" className="text-typography-600">
-                Pausa pomodoro
-              </Text>
-              <Switch
-                value={preferences.cognitiveAlerts.pomodoroPause}
-                onValueChange={(v) =>
-                  updatePreferences({
-                    cognitiveAlerts: {
-                      ...preferences.cognitiveAlerts,
-                      pomodoroPause: v,
-                    },
-                  })
-                }
-                disabled={preferences.focusMode}
-              />
-            </HStack>
-            <HStack className="items-center justify-between">
-              <Text size="sm" className="text-typography-600">
-                Transições suaves
-              </Text>
-              <Switch
-                value={preferences.cognitiveAlerts.transitionScreen}
-                onValueChange={(v) =>
-                  updatePreferences({
-                    cognitiveAlerts: {
-                      ...preferences.cognitiveAlerts,
-                      transitionScreen: v,
-                    },
-                  })
-                }
-                disabled={preferences.focusMode}
-              />
-            </HStack>
           </Section>
         </VStack>
       </ScrollView>

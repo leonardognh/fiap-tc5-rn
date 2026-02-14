@@ -1,12 +1,13 @@
-﻿import { create } from "zustand";
-import {
+﻿import {
+  signOut,
+  updateProfile as updateAuthProfile,
   updateEmail,
   updatePassword,
-  updateProfile as updateAuthProfile,
-  signOut,
 } from "firebase/auth";
+import { create } from "zustand";
 
 import { firebaseAuth } from "@/src/infrastructure/firebase/firebase.client";
+import * as repo from "../data/settings.repository";
 import type {
   UserPreferences,
   UserPreferencesPatch,
@@ -14,7 +15,6 @@ import type {
   UserProfilePatch,
 } from "../types/settings";
 import { DEFAULT_PREFERENCES } from "../types/settings";
-import * as repo from "../data/settings.repository";
 
 type SettingsState = {
   userId: string | null;
@@ -26,7 +26,6 @@ type SettingsState = {
   connect: (userId: string | null) => () => void;
   updateProfile: (patch: UserProfilePatch) => Promise<void>;
   updatePreferences: (patch: UserPreferencesPatch) => Promise<void>;
-  setFocusMode: (enabled: boolean) => Promise<void>;
   clearError: () => void;
   logout: () => Promise<void>;
 };
@@ -183,29 +182,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         preferences: prev,
         error: err?.message ?? "Falha ao atualizar preferências.",
       });
-    }
-  },
-
-  setFocusMode: async (enabled) => {
-    const prefs = get().preferences;
-    if (enabled) {
-      await get().updatePreferences({
-        focusMode: true,
-        uiComplexity: "minimum",
-        detailsMode: "summary",
-        contrast: "normal",
-        animations: false,
-        spaceScale: 1,
-        fontScale: 1,
-        cognitiveAlerts: {
-          ...prefs.cognitiveAlerts,
-          enabled: false,
-          transitionScreen: false,
-          pomodoroPause: false,
-        },
-      });
-    } else {
-      await get().updatePreferences({ focusMode: false });
     }
   },
 

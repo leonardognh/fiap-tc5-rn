@@ -69,8 +69,14 @@ function RootLayoutNav() {
 
   return (
     <GluestackUIProvider mode={resolvedTheme as "light" | "dark"}>
-      <ThemeProvider value={resolvedTheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
+      <ThemeProvider
+        value={resolvedTheme === "dark" ? DarkTheme : DefaultTheme}
+      >
+        <Stack
+          screenOptions={{
+            headerShown: false,
+          }}
+        >
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(app)" />
         </Stack>
