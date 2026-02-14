@@ -1,7 +1,13 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Platform, Pressable, ScrollView } from "react-native";
 import { router } from "expo-router";
-import { Archive, ArchiveRestore, Pencil, Plus, Search } from "lucide-react-native";
+import {
+  Archive,
+  ArchiveRestore,
+  Pencil,
+  Plus,
+  Search,
+} from "lucide-react-native";
 
 import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";

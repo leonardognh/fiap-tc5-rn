@@ -1,10 +1,3 @@
-import { Box } from "@/components/ui/box";
-import { Text } from "@/components/ui/text";
+import { SettingsScreen } from "@/src/settings/presentation/screens/SettingsScreen";
 
-export default function ExploreTab() {
-  return (
-    <Box>
-      <Text>Explore</Text>
-    </Box>
-  );
-}
+export default SettingsScreen;

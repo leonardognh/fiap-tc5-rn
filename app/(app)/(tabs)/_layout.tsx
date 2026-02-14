@@ -1,10 +1,13 @@
 import React from "react";
+import { Alert, Platform, Pressable, View } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Tabs } from "expo-router";
+import { LogOut } from "lucide-react-native";
 
 import Colors from "@/constants/Colors";
 import { useColorScheme } from "@/components/useColorScheme";
 import { useClientOnlyValue } from "@/components/useClientOnlyValue";
+import { useAuthStore } from "@/src/auth/store/auth.store";
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>["name"];
@@ -15,12 +18,48 @@ function TabBarIcon(props: {
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const logout = useAuthStore((s) => s.logout);
+  const iconColor = Colors[colorScheme ?? "light"].text;
+  const confirmLogout = () => {
+    const handleLogout = () => {
+      void logout();
+    };
+
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined" && window.confirm("Deseja sair do app?")) {
+        handleLogout();
+      }
+      return;
+    }
+
+    Alert.alert("Sair", "Deseja sair do app?", [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Sair", style: "destructive", onPress: handleLogout },
+    ]);
+  };
 
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         headerShown: useClientOnlyValue(false, true),
+        headerRight: () => (
+          <View style={{ marginRight: 12 }}>
+            <Pressable
+              onPress={confirmLogout}
+              hitSlop={8}
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: 999,
+                padding: 8,
+                borderWidth: 1,
+                borderColor: iconColor,
+              }}
+            >
+              <LogOut size={18} color="#000" />
+            </Pressable>
+          </View>
+        ),
       }}
     >
       <Tabs.Screen
@@ -33,8 +72,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="two"
         options={{
-          title: "Tab Two",
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          title: "Configurações",
+          tabBarIcon: ({ color }) => <TabBarIcon name="cog" color={color} />,
         }}
       />
     </Tabs>
