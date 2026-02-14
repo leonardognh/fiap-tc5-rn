@@ -1,15 +1,3 @@
-import { Box } from "@/components/ui/box";
-import { VStack } from "@/components/ui/vstack";
-import { Text } from "@/components/ui/text";
+import { BoardsListScreen } from "@/src/boards/presentation/screens/BoardsListScreen";
 
-export default function HomeTab() {
-  return (
-    <Box>
-      <VStack space="md">
-        <Text size="xl" bold>
-          Home
-        </Text>
-      </VStack>
-    </Box>
-  );
-}
+export default BoardsListScreen;
