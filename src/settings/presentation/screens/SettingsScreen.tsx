@@ -1,5 +1,6 @@
 ﻿import { Eye, EyeOff } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Alert, Image, ScrollView } from "react-native";
 
 import { Box } from "@/components/ui/box";
@@ -31,6 +32,7 @@ const Section = ({
 );
 
 export function SettingsScreen() {
+  const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const {
     profile,
@@ -67,8 +69,10 @@ export function SettingsScreen() {
 
   useEffect(() => {
     if (!error) return;
-    Alert.alert("Erro", error, [{ text: "OK", onPress: clearError }]);
-  }, [error, clearError]);
+    Alert.alert(t("settings.errors.title"), error, [
+      { text: "OK", onPress: clearError },
+    ]);
+  }, [error, clearError, t]);
 
   const passwordMismatch =
     !!draftPassword && !!draftConfirm && draftPassword !== draftConfirm;
@@ -82,7 +86,7 @@ export function SettingsScreen() {
   const handleSaveProfile = async () => {
     if (!canSaveProfile) return;
     await updateProfile({
-      displayName: draftName.trim() || "Sem nome",
+      displayName: draftName.trim() || t("settings.no_name"),
       email: draftEmail.trim() || undefined,
       photoURL: draftPhoto.trim() || undefined,
       password: draftPassword ? draftPassword : undefined,
@@ -95,18 +99,21 @@ export function SettingsScreen() {
   };
 
   const setTheme = (mode: ThemeMode) => updatePreferences({ theme: mode });
-  const setLanguage = (language: UserPreferences["language"]) =>
+
+  const setLanguage = (language: UserPreferences["language"]) => {
     updatePreferences({ language });
+    i18n.changeLanguage(language);
+  };
 
   return (
     <Box className="flex-1 bg-background-0">
       <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 32 }}>
         <VStack space="lg">
           {loading ? (
-            <Text className="text-typography-500">Carregando...</Text>
+            <Text className="text-typography-500">{t("settings.loading")}</Text>
           ) : null}
 
-          <Section title="Perfil">
+          <Section title={t("settings.profile")}>
             <HStack space="md" className="items-center">
               <Image
                 source={{
@@ -116,10 +123,10 @@ export function SettingsScreen() {
               />
               <VStack space="xs" className="flex-1">
                 <Text className="text-typography-900 font-semibold">
-                  {profile?.displayName ?? "Sem nome"}
+                  {profile?.displayName ?? t("settings.no_name")}
                 </Text>
                 <Text size="xs" className="text-typography-500">
-                  {profile?.email ?? "email não disponível"}
+                  {profile?.email ?? t("settings.email_unavailable")}
                 </Text>
               </VStack>
               {!isEditing ? (
@@ -128,7 +135,7 @@ export function SettingsScreen() {
                   variant="outline"
                   onPress={() => setIsEditing(true)}
                 >
-                  <ButtonText>Editar</ButtonText>
+                  <ButtonText>{t("settings.edit")}</ButtonText>
                 </Button>
               ) : (
                 <Button
@@ -136,7 +143,7 @@ export function SettingsScreen() {
                   variant="outline"
                   onPress={() => setIsEditing(false)}
                 >
-                  <ButtonText>Cancelar</ButtonText>
+                  <ButtonText>{t("settings.cancel")}</ButtonText>
                 </Button>
               )}
             </HStack>
@@ -145,14 +152,14 @@ export function SettingsScreen() {
               <VStack space="sm">
                 <Input className="border-outline-300 rounded-xl">
                   <InputField
-                    placeholder="Nome"
+                    placeholder={t("settings.placeholder_name")}
                     value={draftName}
                     onChangeText={setDraftName}
                   />
                 </Input>
                 <Input className="border-outline-300 rounded-xl">
                   <InputField
-                    placeholder="Email"
+                    placeholder={t("settings.placeholder_email")}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     value={draftEmail}
@@ -161,19 +168,19 @@ export function SettingsScreen() {
                 </Input>
                 <Input className="border-outline-300 rounded-xl">
                   <InputField
-                    placeholder="URL do avatar"
+                    placeholder={t("settings.placeholder_avatar")}
                     value={draftPhoto}
                     onChangeText={setDraftPhoto}
                   />
                 </Input>
 
                 <Text size="sm" className="text-typography-600 mt-2">
-                  Alterar senha (opcional)
+                  {t("settings.change_password")}
                 </Text>
                 <HStack className="items-center">
                   <Input className="border-outline-300 rounded-xl flex-1">
                     <InputField
-                      placeholder="Nova senha"
+                      placeholder={t("settings.new_password")}
                       secureTextEntry={!showPassword}
                       value={draftPassword}
                       onChangeText={setDraftPassword}
@@ -191,7 +198,7 @@ export function SettingsScreen() {
                 <HStack className="items-center">
                   <Input className="border-outline-300 rounded-xl flex-1">
                     <InputField
-                      placeholder="Confirmar senha"
+                      placeholder={t("settings.confirm_password")}
                       secureTextEntry={!showConfirm}
                       value={draftConfirm}
                       onChangeText={setDraftConfirm}
@@ -208,7 +215,7 @@ export function SettingsScreen() {
                 </HStack>
                 {passwordMismatch ? (
                   <Text size="xs" className="text-error-600">
-                    As senhas não coincidem.
+                    {t("settings.password_mismatch")}
                   </Text>
                 ) : null}
 
@@ -221,17 +228,17 @@ export function SettingsScreen() {
                       !canSaveProfile ? "bg-background-300" : undefined
                     }
                   >
-                    <ButtonText>Salvar</ButtonText>
+                    <ButtonText>{t("settings.save")}</ButtonText>
                   </Button>
                 </HStack>
               </VStack>
             ) : null}
           </Section>
 
-          <Section title="Aparência">
+          <Section title={t("settings.appearance")}>
             <VStack space="sm">
               <Text size="sm" className="text-typography-600">
-                Tema
+                {t("settings.theme")}
               </Text>
               <HStack space="sm" className="flex-wrap">
                 {(["light", "dark", "system"] as ThemeMode[]).map((mode) => {
@@ -244,13 +251,7 @@ export function SettingsScreen() {
                       onPress={() => setTheme(mode)}
                       className={selected ? "bg-primary-600" : undefined}
                     >
-                      <ButtonText>
-                        {mode === "light"
-                          ? "Claro"
-                          : mode === "dark"
-                            ? "Escuro"
-                            : "Sistema"}
-                      </ButtonText>
+                      <ButtonText>{t(`settings.themes.${mode}`)}</ButtonText>
                     </Button>
                   );
                 })}
@@ -259,7 +260,7 @@ export function SettingsScreen() {
 
             <VStack space="sm">
               <Text size="sm" className="text-typography-600">
-                Idioma
+                {t("settings.language")}
               </Text>
               <HStack space="sm" className="flex-wrap">
                 {(["pt-BR", "en-US"] as const).map((lang) => {

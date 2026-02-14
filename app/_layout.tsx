@@ -2,6 +2,7 @@ import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import "@/global.css";
 import { useAuthStore } from "@/src/auth/store/auth.store";
 import { useSettingsStore } from "@/src/settings/store/settings.store";
+import "@/src/utils/i18n";
 import {
   DarkTheme,
   DefaultTheme,
@@ -11,6 +12,7 @@ import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useColorScheme } from "react-native";
 
 SplashScreen.preventAutoHideAsync();
@@ -34,14 +36,22 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
+  const { i18n } = useTranslation();
   const colorScheme = useColorScheme();
   const router = useRouter();
   const segments = useSegments();
+
   const connect = useAuthStore((s) => s.connect);
   const user = useAuthStore((s) => s.user);
   const initializing = useAuthStore((s) => s.initializing);
   const connectSettings = useSettingsStore((s) => s.connect);
   const preferences = useSettingsStore((s) => s.preferences);
+
+  useEffect(() => {
+    if (preferences?.language) {
+      i18n.changeLanguage(preferences.language);
+    }
+  }, [preferences?.language, i18n]);
 
   useEffect(() => {
     return connect();
@@ -59,16 +69,16 @@ function RootLayoutNav() {
 
     if (!user && inApp) router.replace("/login");
     else if (user && inAuth) router.replace("/(app)/(tabs)");
-  }, [user, initializing, segments]);
+  }, [user, initializing, segments, router]);
 
   const themeMode = preferences?.theme ?? "system";
   const resolvedTheme =
     themeMode === "system"
       ? (colorScheme as "light" | "dark") || "light"
-      : themeMode;
+      : (themeMode as "light" | "dark");
 
   return (
-    <GluestackUIProvider mode={resolvedTheme as "light" | "dark"}>
+    <GluestackUIProvider mode={resolvedTheme}>
       <ThemeProvider
         value={resolvedTheme === "dark" ? DarkTheme : DefaultTheme}
       >
