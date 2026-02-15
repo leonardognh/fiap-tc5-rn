@@ -11,6 +11,7 @@ import {
   Timer,
   Trash2,
 } from "lucide-react-native";
+import { Motion } from "@legendapp/motion";
 
 import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";
@@ -40,6 +41,8 @@ import { ColumnFormModal } from "../components/ColumnFormModal";
 import { ItemFormModal } from "../components/ItemFormModal";
 import { PomodoroLockModal } from "../components/PomodoroLockModal";
 import { PomodoroSettingsModal } from "../components/PomodoroSettingsModal";
+
+const MotionView = Motion.View as unknown as React.ComponentType<any>;
 
 type PomodoroStage = "work" | "rest" | null;
 
@@ -117,6 +120,7 @@ export function BoardScreen() {
   }, [items]);
 
   const readOnly = board?.status === "archived";
+  const animationsEnabled = preferences.animations ?? true;
   const pomodoroAllowed = preferences.cognitiveAlerts?.pomodoroPause ?? true;
   const showPomodoro = pomodoroAllowed && !readOnly;
 
@@ -501,6 +505,19 @@ export function BoardScreen() {
               const columnItems = itemsByColumn.get(column.id) ?? [];
               const expanded = expandedLines.includes(column.id);
               const countLabel = columnItems.length === 1 ? "item" : "itens";
+              const delay = Math.min((info.index ?? 0) * 40, 200);
+              const motionProps = animationsEnabled
+                ? {
+                    initial: { opacity: 0, y: 12 },
+                    animate: { opacity: 1, y: 0 },
+                    transition: {
+                      type: "timing",
+                      duration: 420,
+                      delay,
+                      easing: "easeOut",
+                    },
+                  }
+                : undefined;
               return (
                 <DraxListItem
                   itemProps={itemProps}
@@ -515,9 +532,10 @@ export function BoardScreen() {
                   hoverDraggingStyle={{ opacity: 1 }}
                   hoverDragReleasedStyle={{ opacity: 0 }}
                 >
-                  <Box
-                    className="rounded-2xl border border-outline-200 bg-background-50 p-4"
-                  >
+                  <MotionView {...motionProps}>
+                    <Box
+                      className="rounded-2xl border border-outline-200 bg-background-50 p-4"
+                    >
                     <HStack className="items-center justify-between">
                       <Pressable onPress={() => toggleLine(column.id)} style={{ flex: 1 }}>
                         <VStack space="xs">
@@ -661,7 +679,8 @@ export function BoardScreen() {
                         ) : null}
                       </VStack>
                     ) : null}
-                  </Box>
+                    </Box>
+                  </MotionView>
                 </DraxListItem>
               );
             }}
