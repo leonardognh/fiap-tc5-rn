@@ -38,7 +38,7 @@ export default function TabLayout() {
   const handleLogout = async () => {
     try {
       await logout();
-      router.replace("/login");
+      router.replace("/");
     } catch (error) {
       Alert.alert("Erro", "Não foi possível sair. Tente novamente.");
     }
@@ -135,4 +135,3 @@ export default function TabLayout() {
     </>
   );
 }
-
