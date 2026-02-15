@@ -547,18 +547,16 @@ const handleAddColumn = async () => {
                 const expanded = expandedLines.includes(column.id);
                 const countLabel = columnItems.length === 1 ? "item" : "itens";
                 const delay = Math.min((info.index ?? 0) * 40, 200);
-                const motionProps = animationsEnabled
-                  ? {
-                      initial: { opacity: 0, y: 12 },
-                      animate: { opacity: 1, y: 0 },
-                      transition: {
-                        type: "timing",
-                        duration: 420,
-                        delay,
-                        easing: "easeOut",
-                      },
-                    }
-                  : undefined;
+                                const motionProps = {
+                  initial: animationsEnabled ? { opacity: 0, y: 12 } : { opacity: 1, y: 0 },
+                  animate: { opacity: 1, y: 0 },
+                  transition: {
+                    type: "timing",
+                    duration: animationsEnabled ? 420 : 0,
+                    delay: animationsEnabled ? delay : 0,
+                    easing: "easeOut",
+                  },
+                };
                 return (
                   <DraxListItem
                     itemProps={itemProps}
@@ -834,6 +832,7 @@ const handleAddColumn = async () => {
     </Box>
   );
 }
+
 
 
 

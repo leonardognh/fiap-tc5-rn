@@ -176,18 +176,16 @@ export function BoardsListScreen() {
           <VStack space="md">
             {items.map((board, index) => {
               const delay = Math.min(index * 40, 200);
-              const motionProps = animationsEnabled
-                ? {
-                    initial: { opacity: 0, y: 12 },
-                    animate: { opacity: 1, y: 0 },
-                    transition: {
-                      type: "timing",
-                      duration: 420,
-                      delay,
-                      easing: "easeOut",
-                    },
-                  }
-                : undefined;
+                            const motionProps = {
+                initial: animationsEnabled ? { opacity: 0, y: 12 } : { opacity: 1, y: 0 },
+                animate: { opacity: 1, y: 0 },
+                transition: {
+                  type: "timing",
+                  duration: animationsEnabled ? 420 : 0,
+                  delay: animationsEnabled ? delay : 0,
+                  easing: "easeOut",
+                },
+              };
 
               return (
                 <MotionView
@@ -377,6 +375,7 @@ export function BoardsListScreen() {
     </Box>
   );
 }
+
 
 
 
