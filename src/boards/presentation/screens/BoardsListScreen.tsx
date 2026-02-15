@@ -304,20 +304,22 @@ export function BoardsListScreen() {
                 top: Math.min(menuAnchor.y + 12, windowHeight - 180),
               }}
             >
-              <Pressable
-                onPress={(event) => {
-                  event.stopPropagation?.();
-                  if (!selectedBoard) return;
-                  setEditing(selectedBoard);
-                  setOpenMenuId(null);
-                  setMenuAnchor(null);
-                }}
-              >
-                <HStack space="sm" className="items-center py-2">
-                  <Pencil size={16} color="#475569" />
-                  <Text className="text-typography-900">Editar</Text>
-                </HStack>
-              </Pressable>
+              {selectedBoard?.status !== "archived" ? (
+                <Pressable
+                  onPress={(event) => {
+                    event.stopPropagation?.();
+                    if (!selectedBoard) return;
+                    setEditing(selectedBoard);
+                    setOpenMenuId(null);
+                    setMenuAnchor(null);
+                  }}
+                >
+                  <HStack space="sm" className="items-center py-2">
+                    <Pencil size={16} color="#475569" />
+                    <Text className="text-typography-900">Editar</Text>
+                  </HStack>
+                </Pressable>
+              ) : null}
               <Pressable
                 onPress={(event) => {
                   event.stopPropagation?.();
@@ -385,6 +387,7 @@ export function BoardsListScreen() {
     </Box>
   );
 }
+
 
 
 

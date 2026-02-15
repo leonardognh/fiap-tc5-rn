@@ -500,17 +500,10 @@ const handleAddColumn = async () => {
             size="sm"
             onPress={handleAddColumn}
             isDisabled={readOnly || !newColumnTitle.trim()}
-            className={readOnly ? "bg-background-300" : undefined}
+            
           >
             <ButtonIcon as={Plus} />
           </Button>
-          {readOnly ? (
-            <Box className="rounded-full bg-background-200 px-3 py-1">
-              <Text size="xs" className="text-typography-600">
-                Somente leitura
-              </Text>
-            </Box>
-          ) : null}
         </HStack>
 
         {loading && columns.length === 0 ? (
@@ -832,6 +825,8 @@ const handleAddColumn = async () => {
     </Box>
   );
 }
+
+
 
 
 
