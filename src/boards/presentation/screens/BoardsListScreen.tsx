@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView } from "react-native";
 import { router } from "expo-router";
+import { useIsFocused } from "@react-navigation/native";
 import {
   Archive,
   ArchiveRestore,
@@ -8,6 +9,7 @@ import {
   Plus,
   Search,
 } from "lucide-react-native";
+import { Motion } from "@legendapp/motion";
 
 import { ConfirmModal } from "@/components/modals/ConfirmModal";
 import { Box } from "@/components/ui/box";
@@ -19,9 +21,12 @@ import { Button, ButtonText, ButtonIcon } from "@/components/ui/button";
 import { Input, InputField, InputIcon, InputSlot } from "@/components/ui/input";
 
 import { useAuthStore } from "@/src/auth/store/auth.store";
+import { useSettingsStore } from "@/src/settings/store/settings.store";
 import { useBoardsStore } from "../../store/boards.store";
 import type { Board } from "../../types/boards";
 import { BoardFormModal } from "../components/BoardFormModal";
+
+const MotionView = Motion.View as unknown as React.ComponentType<any>;
 
 type ConfirmState = {
   title: string;
@@ -45,6 +50,9 @@ export function BoardsListScreen() {
     archiveBoard,
     unarchiveBoard,
   } = useBoardsStore();
+  const animationsEnabled = useSettingsStore((s) => s.preferences.animations);
+  const isFocused = useIsFocused();
+  const [appearKey, setAppearKey] = useState(0);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<Board | null>(null);
@@ -53,6 +61,12 @@ export function BoardsListScreen() {
   useEffect(() => {
     return subscribe(user?.uid ?? null);
   }, [user?.uid, subscribe]);
+
+  useEffect(() => {
+    if (isFocused && animationsEnabled) {
+      setAppearKey((value) => value + 1);
+    }
+  }, [isFocused, animationsEnabled]);
 
   const statusOptions = useMemo(
     () => [
@@ -152,83 +166,109 @@ export function BoardsListScreen() {
           ) : null}
 
           <VStack space="md">
-            {items.map((board) => (
-              <Pressable
-                key={board.id}
-                onPress={() =>
-                  router.push({
-                    pathname: "/boards/[boardId]",
-                    params: { boardId: board.id },
-                  })
-                }
-              >
-                <Box className="rounded-2xl border border-outline-200 bg-background-0 p-4">
-                  <VStack space="sm">
-                    <HStack className="items-start justify-between">
-                      <VStack space="xs" className="flex-1 pr-2">
-                        <Text
-                          size="lg"
-                          className="text-typography-900 font-semibold"
-                        >
-                          {board.title}
-                        </Text>
-                        <Box
-                          className={`self-start rounded-full px-3 py-1 ${
-                            board.status === "archived"
-                              ? "bg-background-200"
-                              : "bg-success-100"
-                          }`}
-                        >
-                          <Text size="xs" className="text-typography-700">
-                            {board.status === "archived" ? "Arquivado" : "Ativo"}
+            {items.map((board, index) => {
+              const delay = Math.min(index * 40, 200);
+              const motionProps = animationsEnabled
+                ? {
+                    initial: { opacity: 0, y: 12 },
+                    animate: { opacity: 1, y: 0 },
+                    transition: {
+                      type: "timing",
+                      duration: 420,
+                      delay,
+                      easing: "easeOut",
+                    },
+                  }
+                : undefined;
+
+              return (
+                <MotionView
+                  key={
+                    animationsEnabled
+                      ? `${appearKey}-${board.id}`
+                      : board.id
+                  }
+                  {...motionProps}
+                >
+                  <Pressable
+                    onPress={() =>
+                      router.push({
+                        pathname: "/boards/[boardId]",
+                        params: { boardId: board.id },
+                      })
+                    }
+                  >
+                    <Box className="rounded-2xl border border-outline-200 bg-background-0 p-4">
+                      <VStack space="sm">
+                        <HStack className="items-start justify-between">
+                          <VStack space="xs" className="flex-1 pr-2">
+                            <Text
+                              size="lg"
+                              className="text-typography-900 font-semibold"
+                            >
+                              {board.title}
+                            </Text>
+                            <Box
+                              className={`self-start rounded-full px-3 py-1 ${
+                                board.status === "archived"
+                                  ? "bg-background-200"
+                                  : "bg-success-100"
+                              }`}
+                            >
+                              <Text size="xs" className="text-typography-700">
+                                {board.status === "archived"
+                                  ? "Arquivado"
+                                  : "Ativo"}
+                              </Text>
+                            </Box>
+                          </VStack>
+                          <HStack space="xs" className="items-center">
+                            <Pressable
+                              onPress={(event) => {
+                                event.stopPropagation?.();
+                                setEditing(board);
+                              }}
+                              hitSlop={8}
+                            >
+                              <Box className="rounded-full border border-outline-200 bg-background-0 p-2">
+                                <Pencil size={16} color="#475569" />
+                              </Box>
+                            </Pressable>
+                            <Pressable
+                              onPress={(event) => {
+                                event.stopPropagation?.();
+                                onConfirmArchive(board);
+                              }}
+                              hitSlop={8}
+                            >
+                              <Box className="rounded-full border border-outline-200 bg-background-0 p-2">
+                                {board.status === "archived" ? (
+                                  <ArchiveRestore size={16} color="#475569" />
+                                ) : (
+                                  <Archive size={16} color="#475569" />
+                                )}
+                              </Box>
+                            </Pressable>
+                          </HStack>
+                        </HStack>
+
+                        {board.description ? (
+                          <Text size="sm" className="text-typography-600">
+                            {board.description}
                           </Text>
-                        </Box>
+                        ) : null}
+
+                        <Text size="xs" className="text-typography-400">
+                          Atualizado em {new Date(board.updatedAt).toLocaleDateString()}
+                        </Text>
+
+                        <HStack space="sm" className="flex-wrap" />
                       </VStack>
-                      <HStack space="xs" className="items-center">
-                        <Pressable
-                          onPress={(event) => {
-                            event.stopPropagation?.();
-                            setEditing(board);
-                          }}
-                          hitSlop={8}
-                        >
-                          <Box className="rounded-full border border-outline-200 bg-background-0 p-2">
-                            <Pencil size={16} color="#475569" />
-                          </Box>
-                        </Pressable>
-                        <Pressable
-                          onPress={(event) => {
-                            event.stopPropagation?.();
-                            onConfirmArchive(board);
-                          }}
-                          hitSlop={8}
-                        >
-                          <Box className="rounded-full border border-outline-200 bg-background-0 p-2">
-                            {board.status === "archived" ? (
-                              <ArchiveRestore size={16} color="#475569" />
-                            ) : (
-                              <Archive size={16} color="#475569" />
-                            )}
-                          </Box>
-                        </Pressable>
-                      </HStack>
-                    </HStack>
-
-                  {board.description ? (
-                    <Text size="sm" className="text-typography-600">
-                      {board.description}
-                    </Text>
-                  ) : null}
-
-                  <Text size="xs" className="text-typography-400">
-                    Atualizado em {new Date(board.updatedAt).toLocaleDateString()}
-                  </Text>
-
-                  <HStack space="sm" className="flex-wrap" />
-                </VStack>
-                </Box>
-              </Pressable>
-            ))}
+                    </Box>
+                  </Pressable>
+                </MotionView>
+              );
+            })}
           </VStack>
         </ScrollView>
       </VStack>
@@ -273,4 +313,7 @@ export function BoardsListScreen() {
     </Box>
   );
 }
+
+
+
 

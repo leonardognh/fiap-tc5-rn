@@ -32,7 +32,8 @@ export default function TabLayout() {
   const iconColor = Colors[colorScheme ?? "light"].text;
   const [logoutOpen, setLogoutOpen] = useState(false);
   const screenWidth = useWindowDimensions().width;
-  const animationsEnabled = preferences.animations;
+  const transitionsEnabled =
+    preferences.cognitiveAlerts?.transitionScreen ?? true;
 
   const handleLogout = async () => {
     try {
@@ -51,7 +52,7 @@ export default function TabLayout() {
         screenOptions={{
           tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
           headerShown: useClientOnlyValue(false, true),
-          sceneStyleInterpolator: animationsEnabled
+          sceneStyleInterpolator: transitionsEnabled
             ? ({ current }) => ({
                 sceneStyle: {
                   opacity: current.progress.interpolate({
@@ -69,7 +70,7 @@ export default function TabLayout() {
                 },
               })
             : undefined,
-          transitionSpec: animationsEnabled
+          transitionSpec: transitionsEnabled
             ? {
                 animation: "timing",
                 config: {

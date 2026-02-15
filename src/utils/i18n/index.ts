@@ -23,8 +23,8 @@ export const resources = {
         password_mismatch: "As senhas não coincidem.",
         theme: "Tema",
         animations: "Animações",
-        animations_hint:
-          "Ative transições entre telas e efeitos visuais do app.",
+        cognitive_alerts: "Alertas cognitivos",
+        transition_screen: "Transições suaves",
         language: "Idioma",
         themes: {
           light: "Claro",
@@ -58,8 +58,8 @@ export const resources = {
         password_mismatch: "Passwords do not match.",
         theme: "Theme",
         animations: "Animations",
-        animations_hint:
-          "Enable screen transitions and visual effects across the app.",
+        cognitive_alerts: "Cognitive alerts",
+        transition_screen: "Smooth transitions",
         language: "Language",
         themes: {
           light: "Light",

@@ -109,6 +109,13 @@ export function SettingsScreen() {
 
   const setAnimations = (enabled: boolean) =>
     updatePreferences({ animations: enabled });
+  const setTransitionScreen = (enabled: boolean) =>
+    updatePreferences({
+      cognitiveAlerts: {
+        ...preferences.cognitiveAlerts,
+        transitionScreen: enabled,
+      },
+    });
 
   return (
     <Box className="flex-1 bg-background-0">
@@ -263,19 +270,14 @@ export function SettingsScreen() {
               </HStack>
             </VStack>
 
-            <VStack space="sm">
-              <HStack className="items-center justify-between">
-                <Text size="sm" className="text-typography-600">
-                  {t("settings.animations")}
-                </Text>
-                <Switch
-                  value={preferences.animations}
-                  onValueChange={setAnimations}
-                />
-              </HStack>
-              <Text size="xs" className="text-typography-500">
-                {t("settings.animations_hint")}
+            <VStack space="xs">
+              <Text size="sm" className="text-typography-600">
+                {t("settings.animations")}
               </Text>
+              <Switch
+                value={preferences.animations}
+                onValueChange={setAnimations}
+              />
             </VStack>
 
             <VStack space="sm">
@@ -300,6 +302,18 @@ export function SettingsScreen() {
                   );
                 })}
               </HStack>
+            </VStack>
+          </Section>
+
+          <Section title={t("settings.cognitive_alerts")}>
+            <VStack space="xs">
+              <Text size="sm" className="text-typography-600">
+                {t("settings.transition_screen")}
+              </Text>
+              <Switch
+                value={preferences.cognitiveAlerts?.transitionScreen ?? true}
+                onValueChange={setTransitionScreen}
+              />
             </VStack>
           </Section>
         </VStack>
