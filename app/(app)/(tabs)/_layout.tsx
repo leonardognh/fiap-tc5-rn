@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import {
   Alert,
   Easing,
@@ -39,7 +39,7 @@ export default function TabLayout() {
     try {
       await logout();
       router.replace("/login");
-    } catch {
+    } catch (error) {
       Alert.alert("Erro", "Não foi possível sair. Tente novamente.");
     }
   };
@@ -112,6 +112,13 @@ export default function TabLayout() {
           options={{
             title: "Configurações",
             tabBarIcon: ({ color }) => <TabBarIcon name="cog" color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="boards/[boardId]"
+          options={{
+            title: "Board",
+            href: null,
           }}
         />
       </Tabs>

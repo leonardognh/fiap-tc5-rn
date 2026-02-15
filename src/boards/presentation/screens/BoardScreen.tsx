@@ -1,7 +1,8 @@
-﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Alert, Pressable } from "react-native";
 import { DraxList, DraxListItem, DraxProvider } from "react-native-drax";
 import { router, useLocalSearchParams } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 import {
   ChevronDown,
   ChevronLeft,
@@ -16,7 +17,6 @@ import { Motion } from "@legendapp/motion";
 import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";
 import { HStack } from "@/components/ui/hstack";
-import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
 import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
 import { Input, InputField } from "@/components/ui/input";
@@ -60,6 +60,7 @@ export function BoardScreen() {
   const boardId = Array.isArray(params.boardId)
     ? params.boardId[0]
     : params.boardId;
+  const navigation = useNavigation();
   const {
     board,
     columns,
@@ -118,6 +119,28 @@ export function BoardScreen() {
   useEffect(() => {
     itemsRef.current = items;
   }, [items]);
+
+  useLayoutEffect(() => {
+    const isArchived = board?.status === "archived";
+    const statusLabel = isArchived ? "Arquivado" : "Ativo";
+    const statusClass = isArchived ? "bg-background-200" : "bg-success-100";
+    navigation.setOptions({
+      headerTitleAlign: "left",
+      headerTitle: () => (
+        <HStack space="sm" className="items-center">
+          <Text size="sm" className="text-typography-900 font-semibold">
+            {board?.title ?? "Board"}
+          </Text>
+          <Box className={`rounded-full px-3 py-1 ${statusClass}`}>
+            <Text size="xs" className="text-typography-700">
+              {statusLabel}
+            </Text>
+          </Box>
+        </HStack>
+      ),
+      headerLeft: () => null,
+    });
+  }, [navigation, board?.title]);
 
   const readOnly = board?.status === "archived";
   const animationsEnabled = preferences.animations ?? true;
@@ -413,35 +436,7 @@ export function BoardScreen() {
 
   return (
     <Box className="flex-1 bg-background-0">
-      <VStack space="md" className="p-6">
-        <HStack className="items-center justify-between">
-          <HStack space="sm" className="items-center">
-            <Button
-              size="xs"
-              variant="outline"
-              onPress={() => router.back()}
-              accessibilityLabel="Voltar"
-            >
-              <ButtonIcon as={ChevronLeft} />
-            </Button>
-            <VStack space="xs">
-              <Heading size="lg" className="text-typography-900">
-                {board?.title ?? "Board"}
-              </Heading>
-              <Text size="xs" className="text-typography-500">
-                {board?.status === "archived" ? "Arquivado" : "Ativo"}
-              </Text>
-            </VStack>
-          </HStack>
-
-          {readOnly ? (
-            <Box className="rounded-full bg-background-200 px-3 py-1">
-              <Text size="xs" className="text-typography-600">
-                Somente leitura
-              </Text>
-            </Box>
-          ) : null}
-        </HStack>
+      <VStack space="md" className="p-6 flex-1 min-h-0">
 
         {error ? (
           <Box className="rounded-xl border border-error-200 bg-error-50 p-3">
@@ -452,11 +447,21 @@ export function BoardScreen() {
         ) : null}
 
         <HStack space="sm" className="items-center">
+          <Button
+            size="xs"
+            variant="outline"
+            onPress={() => router.back()}
+            accessibilityLabel="Voltar"
+          >
+            <ButtonIcon as={ChevronLeft} />
+          </Button>
           <Input className="border-outline-300 rounded-xl flex-1">
             <InputField
-              placeholder="Nova linha"
+              placeholder="Novo status"
               value={newColumnTitle}
               onChangeText={setNewColumnTitle}
+              onSubmitEditing={handleAddColumn}
+              returnKeyType="done"
               editable={!readOnly}
             />
           </Input>
@@ -477,65 +482,79 @@ export function BoardScreen() {
           >
             <ButtonIcon as={Plus} />
           </Button>
+          {readOnly ? (
+            <Box className="rounded-full bg-background-200 px-3 py-1">
+              <Text size="xs" className="text-typography-600">
+                Somente leitura
+              </Text>
+            </Box>
+          ) : null}
         </HStack>
 
         {loading && columns.length === 0 ? (
           <Text className="text-typography-500">Carregando...</Text>
         ) : null}
 
-        <DraxProvider>
-          <DraxList
-            data={orderedColumns}
-            keyExtractor={(column) => column.id}
-            contentContainerStyle={{ paddingBottom: 32 }}
-            longPressDelay={150}
-            reorderable={!readOnly}
-            onItemReorder={({ fromIndex, toIndex }) => {
-              if (readOnly || fromIndex === toIndex) return;
-              setOrderedColumns((prev) => {
-                const updated = [...prev];
-                const [moved] = updated.splice(fromIndex, 1);
-                updated.splice(toIndex, 0, moved);
-                handleReorderLines(updated);
-                return updated;
-              });
-            }}
-            renderItem={(info, itemProps) => {
-              const column = info.item;
-              const columnItems = itemsByColumn.get(column.id) ?? [];
-              const expanded = expandedLines.includes(column.id);
-              const countLabel = columnItems.length === 1 ? "item" : "itens";
-              const delay = Math.min((info.index ?? 0) * 40, 200);
-              const motionProps = animationsEnabled
-                ? {
-                    initial: { opacity: 0, y: 12 },
-                    animate: { opacity: 1, y: 0 },
-                    transition: {
-                      type: "timing",
-                      duration: 420,
-                      delay,
-                      easing: "easeOut",
-                    },
-                  }
-                : undefined;
-              return (
-                <DraxListItem
-                  itemProps={itemProps}
-                  draggable={!readOnly}
-                  style={{ marginBottom: 16 }}
-                  animateSnap={false}
-                  snapDelay={0}
-                  snapDuration={0}
-                  draggingStyle={{ opacity: 0 }}
-                  dragReleasedStyle={{ opacity: 1 }}
-                  hoverStyle={{ opacity: 1 }}
-                  hoverDraggingStyle={{ opacity: 1 }}
-                  hoverDragReleasedStyle={{ opacity: 0 }}
-                >
-                  <MotionView {...motionProps}>
-                    <Box
-                      className="rounded-2xl border border-outline-200 bg-background-50 p-4"
-                    >
+        <Box className="flex-1 min-h-0">
+          <DraxProvider style={{ flex: 1 }}>
+            <DraxList
+              data={orderedColumns}
+              keyExtractor={(column) => column.id}
+              contentContainerStyle={{ paddingBottom: 32, paddingTop: 4 }}
+              longPressDelay={150}
+              reorderable={!readOnly}
+              showsVerticalScrollIndicator
+              scrollEnabled
+              nestedScrollEnabled
+              keyboardShouldPersistTaps="handled"
+              style={{ flex: 1 }}
+              parentDraxViewProps={{ style: { flex: 1 } }}
+              onItemReorder={({ fromIndex, toIndex }) => {
+                if (readOnly || fromIndex === toIndex) return;
+                setOrderedColumns((prev) => {
+                  const updated = [...prev];
+                  const [moved] = updated.splice(fromIndex, 1);
+                  updated.splice(toIndex, 0, moved);
+                  handleReorderLines(updated);
+                  return updated;
+                });
+              }}
+              renderItem={(info, itemProps) => {
+                const column = info.item;
+                const columnItems = itemsByColumn.get(column.id) ?? [];
+                const expanded = expandedLines.includes(column.id);
+                const countLabel = columnItems.length === 1 ? "item" : "itens";
+                const delay = Math.min((info.index ?? 0) * 40, 200);
+                const motionProps = animationsEnabled
+                  ? {
+                      initial: { opacity: 0, y: 12 },
+                      animate: { opacity: 1, y: 0 },
+                      transition: {
+                        type: "timing",
+                        duration: 420,
+                        delay,
+                        easing: "easeOut",
+                      },
+                    }
+                  : undefined;
+                return (
+                  <DraxListItem
+                    itemProps={itemProps}
+                    draggable={!readOnly}
+                    style={{ marginBottom: 16 }}
+                    animateSnap={false}
+                    snapDelay={0}
+                    snapDuration={0}
+                    draggingStyle={{ opacity: 0 }}
+                    dragReleasedStyle={{ opacity: 1 }}
+                    hoverStyle={{ opacity: 1 }}
+                    hoverDraggingStyle={{ opacity: 1 }}
+                    hoverDragReleasedStyle={{ opacity: 0 }}
+                  >
+                    <MotionView {...motionProps}>
+                      <Box
+                        className="rounded-2xl border border-outline-200 bg-background-50 p-4"
+                      >
                     <HStack className="items-center justify-between">
                       <Pressable onPress={() => toggleLine(column.id)} style={{ flex: 1 }}>
                         <VStack space="xs">
@@ -679,13 +698,14 @@ export function BoardScreen() {
                         ) : null}
                       </VStack>
                     ) : null}
-                    </Box>
-                  </MotionView>
-                </DraxListItem>
-              );
-            }}
-          />
-        </DraxProvider>
+                      </Box>
+                    </MotionView>
+                  </DraxListItem>
+                );
+              }}
+            />
+          </DraxProvider>
+        </Box>
       </VStack>
 
       <PomodoroSettingsModal
@@ -757,3 +777,10 @@ export function BoardScreen() {
     </Box>
   );
 }
+
+
+
+
+
+
+

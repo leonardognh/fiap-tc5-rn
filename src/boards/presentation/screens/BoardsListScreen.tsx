@@ -193,7 +193,7 @@ export function BoardsListScreen() {
                   <Pressable
                     onPress={() =>
                       router.push({
-                        pathname: "/boards/[boardId]",
+                        pathname: "/(app)/(tabs)/boards/[boardId]",
                         params: { boardId: board.id },
                       })
                     }
@@ -313,7 +313,6 @@ export function BoardsListScreen() {
     </Box>
   );
 }
-
 
 
 
