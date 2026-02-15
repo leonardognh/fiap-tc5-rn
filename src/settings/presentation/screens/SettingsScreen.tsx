@@ -417,6 +417,12 @@ export function SettingsScreen() {
                     <Text size="xs" className="text-typography-600">
                       • {t("settings.focus_mode_help_4")}
                     </Text>
+                     <Text size="xs" className="text-typography-600">
+                      • {t("settings.focus_mode_help_5")}
+                    </Text>
+                     <Text size="xs" className="text-typography-600">
+                      • {t("settings.focus_mode_help_6")}
+                    </Text>
                   </VStack>
                 </Box>
               ) : null}

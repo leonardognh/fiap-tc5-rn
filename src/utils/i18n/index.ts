@@ -32,6 +32,8 @@ export const resources = {
         focus_mode_help_2: "Desativa animações do app.",
         focus_mode_help_3: "Desativa transições suaves entre telas.",
         focus_mode_help_4: "Desativa o Pomodoro.",
+        focus_mode_help_5: "Mostra apenas os boards ativos",
+        focus_mode_help_6: "Desativa filtros",
         cognitive_alerts: "Alertas cognitivos",
         transition_screen: "Transições suaves",
         pomodoro: "Pomodoro",

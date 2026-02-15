@@ -52,6 +52,7 @@ export function BoardsListScreen() {
     unarchiveBoard,
   } = useBoardsStore();
   const animationsEnabled = useSettingsStore((s) => s.preferences.animations);
+  const focusModeEnabled = useSettingsStore((s) => s.preferences.focusMode ?? false);
   const isFocused = useIsFocused();
   const [appearKey, setAppearKey] = useState(0);
 
@@ -75,6 +76,13 @@ export function BoardsListScreen() {
       setAppearKey((value) => value + 1);
     }
   }, [isFocused, animationsEnabled]);
+
+  useEffect(() => {
+    if (!focusModeEnabled) return;
+    if (query.status !== "active") {
+      setQuery({ status: "active" as any });
+    }
+  }, [focusModeEnabled, query.status, setQuery]);
 
   const statusOptions = useMemo(
     () => [
@@ -119,33 +127,35 @@ export function BoardsListScreen() {
           </Button>
         </HStack>
 
-        <HStack space="sm" className="flex-wrap">
-          {statusOptions.map((opt) => {
-            const selected = query.status === opt.value;
-            return (
-              <Button
-                key={opt.value}
-                size="xs"
-                variant={selected ? "solid" : "outline"}
-                action={selected ? "primary" : "secondary"}
-                onPress={() => setQuery({ status: opt.value as any })}
-                className={selected ? "bg-primary-600" : undefined}
-              >
-                <ButtonText>{opt.label}</ButtonText>
-              </Button>
-            );
-          })}
+        {!focusModeEnabled ? (
+          <HStack space="sm" className="flex-wrap">
+            {statusOptions.map((opt) => {
+              const selected = query.status === opt.value;
+              return (
+                <Button
+                  key={opt.value}
+                  size="xs"
+                  variant={selected ? "solid" : "outline"}
+                  action={selected ? "primary" : "secondary"}
+                  onPress={() => setQuery({ status: opt.value as any })}
+                  className={selected ? "bg-primary-600" : undefined}
+                >
+                  <ButtonText>{opt.label}</ButtonText>
+                </Button>
+              );
+            })}
 
-          <Button
-            size="xs"
-            variant={query.mine ? "solid" : "outline"}
-            action={query.mine ? "primary" : "secondary"}
-            onPress={() => setQuery({ mine: !query.mine })}
-            className={query.mine ? "bg-primary-600" : undefined}
-          >
-            <ButtonText>Meus boards</ButtonText>
-          </Button>
-        </HStack>
+            <Button
+              size="xs"
+              variant={query.mine ? "solid" : "outline"}
+              action={query.mine ? "primary" : "secondary"}
+              onPress={() => setQuery({ mine: !query.mine })}
+              className={query.mine ? "bg-primary-600" : undefined}
+            >
+              <ButtonText>Meus boards</ButtonText>
+            </Button>
+          </HStack>
+        ) : null}
 
         {error ? (
           <Box className="rounded-xl border border-error-200 bg-error-50 p-3">
@@ -375,6 +385,12 @@ export function BoardsListScreen() {
     </Box>
   );
 }
+
+
+
+
+
+
 
 
 
