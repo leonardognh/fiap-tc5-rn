@@ -1,4 +1,4 @@
-import i18n from "i18next";
+﻿import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 
 export const resources = {
@@ -25,6 +25,7 @@ export const resources = {
         animations: "Animações",
         cognitive_alerts: "Alertas cognitivos",
         transition_screen: "Transições suaves",
+        pomodoro: "Pomodoro",
         language: "Idioma",
         themes: {
           light: "Claro",
@@ -33,6 +34,33 @@ export const resources = {
         },
         errors: {
           title: "Erro",
+        },
+      },
+      boards: {
+        pomodoro: {
+          dialogTitle: "Configurar Pomodoro",
+          enable: "Ativar Pomodoro neste board",
+          needColumns: "Crie pelo menos 3 linhas no board para habilitar o Pomodoro.",
+          applyOnColumn: "Aplicar Pomodoro na linha:",
+          selectLine: "Selecionar linha",
+          none: "Nenhuma",
+          selectBaseColumnError: "Selecione a linha base do Pomodoro.",
+          workSeconds: "Tempo de trabalho (segundos)",
+          workRequired: "Tempo de trabalho e obrigatorio.",
+          workMin: "Minimo 60 segundos.",
+          restSeconds: "Tempo de descanso (segundos)",
+          restRequired: "Tempo de descanso e obrigatorio.",
+          restMin: "Minimo 30 segundos.",
+          autoMove: "Movimentacao automatica",
+          moveOnPause: "Ao entrar em pausa, mover para:",
+          moveOnResume: "Ao voltar para atividade, mover para:",
+          moveOnComplete: "Ao finalizar atividade, mover para:",
+          breakTitle: "Pausa do Pomodoro",
+          breakDescription:
+            "Aproveite o tempo para descansar um pouco. A tela sera liberada em breve e voce podera voltar para as suas atividades.",
+          timeRemaining: "Tempo restante",
+          backToTask: "Voltar para a atividade",
+          finishedTask: "Finalizei a atividade",
         },
       },
     },
@@ -60,6 +88,7 @@ export const resources = {
         animations: "Animations",
         cognitive_alerts: "Cognitive alerts",
         transition_screen: "Smooth transitions",
+        pomodoro: "Pomodoro",
         language: "Language",
         themes: {
           light: "Light",
@@ -68,6 +97,33 @@ export const resources = {
         },
         errors: {
           title: "Error",
+        },
+      },
+      boards: {
+        pomodoro: {
+          dialogTitle: "Pomodoro settings",
+          enable: "Enable Pomodoro on this board",
+          needColumns: "Create at least 3 lines in the board to enable Pomodoro.",
+          applyOnColumn: "Apply Pomodoro to line:",
+          selectLine: "Select line",
+          none: "None",
+          selectBaseColumnError: "Select the base line for Pomodoro.",
+          workSeconds: "Work time (seconds)",
+          workRequired: "Work time is required.",
+          workMin: "Minimum 60 seconds.",
+          restSeconds: "Break time (seconds)",
+          restRequired: "Break time is required.",
+          restMin: "Minimum 30 seconds.",
+          autoMove: "Auto move",
+          moveOnPause: "On pause, move to:",
+          moveOnResume: "On resume, move to:",
+          moveOnComplete: "On complete, move to:",
+          breakTitle: "Pomodoro break",
+          breakDescription:
+            "Take a moment to rest. The screen will unlock soon and you can return to your activities.",
+          timeRemaining: "Time remaining",
+          backToTask: "Back to task",
+          finishedTask: "I finished the task",
         },
       },
     },

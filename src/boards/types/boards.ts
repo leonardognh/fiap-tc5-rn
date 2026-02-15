@@ -1,5 +1,15 @@
 ﻿export type BoardStatus = "active" | "archived";
 
+export type PomodoroConfig = {
+  enabled: boolean;
+  workSeconds: number | null;
+  restSeconds: number | null;
+  moveOnPauseColumnId?: string | null;
+  moveOnResumeColumnId?: string | null;
+  moveOnCompleteColumnId?: string | null;
+  applyOnColumnId?: string | null;
+};
+
 export type Board = {
   id: string;
   title: string;
@@ -7,6 +17,7 @@ export type Board = {
   createdBy: string;
   members: string[];
   status: BoardStatus;
+  pomodoro?: PomodoroConfig;
   createdAt: number;
   updatedAt: number;
 };
@@ -51,3 +62,5 @@ export type ItemFormInput = {
   title: string;
   description?: string;
 };
+
+

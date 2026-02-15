@@ -1,5 +1,5 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Modal, Pressable } from "react-native";
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Pressable } from "react-native";
 import { DraxList, DraxListItem, DraxProvider } from "react-native-drax";
 import { router, useLocalSearchParams } from "expo-router";
 import {
@@ -8,6 +8,7 @@ import {
   ChevronUp,
   Plus,
   Pencil,
+  Timer,
   Trash2,
 } from "lucide-react-native";
 
@@ -18,18 +19,44 @@ import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
 import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
 import { Input, InputField } from "@/components/ui/input";
+import {
+  Select,
+  SelectBackdrop,
+  SelectContent,
+  SelectDragIndicator,
+  SelectDragIndicatorWrapper,
+  SelectIcon,
+  SelectInput,
+  SelectItem,
+  SelectPortal,
+  SelectScrollView,
+  SelectTrigger,
+} from "@/components/ui/select";
 
+import { useSettingsStore } from "@/src/settings/store/settings.store";
 import { useBoardViewStore } from "../../store/board-view.store";
 import type { BoardColumn, BoardItem } from "../../types/boards";
 import { ColumnFormModal } from "../components/ColumnFormModal";
 import { ItemFormModal } from "../components/ItemFormModal";
+import { PomodoroLockModal } from "../components/PomodoroLockModal";
+import { PomodoroSettingsModal } from "../components/PomodoroSettingsModal";
+
+type PomodoroStage = "work" | "rest" | null;
+
+type PomodoroRuntimeState = {
+  running: boolean;
+  stage: PomodoroStage;
+  secondsLeft: number;
+  endsAt: number | null;
+  cycleId: number;
+  lastConfigHash: string | null;
+};
 
 export function BoardScreen() {
   const params = useLocalSearchParams<{ boardId?: string }>();
   const boardId = Array.isArray(params.boardId)
     ? params.boardId[0]
     : params.boardId;
-
   const {
     board,
     columns,
@@ -44,18 +71,37 @@ export function BoardScreen() {
     updateItem,
     deleteItem,
     moveItem,
+    moveItemsBatch,
     reorderColumns,
+    updatePomodoro,
   } = useBoardViewStore();
 
+  const preferences = useSettingsStore((s) => s.preferences);
   const [newColumnTitle, setNewColumnTitle] = useState("");
   const [editingColumn, setEditingColumn] = useState<BoardColumn | null>(null);
   const [creatingItemFor, setCreatingItemFor] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<BoardItem | null>(null);
   const [expandedLines, setExpandedLines] = useState<string[]>([]);
   const [orderedColumns, setOrderedColumns] = useState<BoardColumn[]>([]);
-  const [moveTarget, setMoveTarget] = useState<
-    { itemId: string; fromColumnId: string } | null
-  >(null);
+  const [pomodoroOpen, setPomodoroOpen] = useState(false);
+  const [pomodoroState, setPomodoroState] = useState<PomodoroRuntimeState>({
+    running: false,
+    stage: null,
+    secondsLeft: 0,
+    endsAt: null,
+    cycleId: 0,
+    lastConfigHash: null,
+  });
+  const [lockState, setLockState] = useState<{
+    open: boolean;
+    cycleId: number | null;
+  }>({
+    open: false,
+    cycleId: null,
+  });
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const itemsRef = useRef<BoardItem[]>([]);
+  const movedByCycleRef = useRef<Map<number, string[]>>(new Map());
 
   useEffect(() => {
     if (!boardId) return;
@@ -66,7 +112,13 @@ export function BoardScreen() {
     setOrderedColumns(columns);
   }, [columns]);
 
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
   const readOnly = board?.status === "archived";
+  const pomodoroAllowed = preferences.cognitiveAlerts?.pomodoroPause ?? true;
+  const showPomodoro = pomodoroAllowed && !readOnly;
 
   const itemsByColumn = useMemo(() => {
     const map = new Map<string, BoardItem[]>();
@@ -78,6 +130,234 @@ export function BoardScreen() {
     return map;
   }, [items]);
 
+  const pomodoroConfig = board?.pomodoro ?? null;
+  const pomodoroEnabled =
+    !!pomodoroConfig?.enabled && pomodoroAllowed && !readOnly && columns.length >= 3;
+  const applyOnColumnId = pomodoroEnabled ? pomodoroConfig?.applyOnColumnId ?? null : null;
+  const baseColumnExists = applyOnColumnId
+    ? columns.some((column) => column.id === applyOnColumnId)
+    : false;
+  const baseHasItems =
+    !!applyOnColumnId && baseColumnExists
+      ? (itemsByColumn.get(applyOnColumnId) ?? []).length > 0
+      : false;
+
+  const pomodoroHash = useMemo(() => {
+    if (!pomodoroConfig) return null;
+    return JSON.stringify({
+      enabled: pomodoroConfig.enabled,
+      workSeconds: pomodoroConfig.workSeconds,
+      restSeconds: pomodoroConfig.restSeconds,
+      applyOnColumnId: pomodoroConfig.applyOnColumnId ?? null,
+      moveOnPauseColumnId: pomodoroConfig.moveOnPauseColumnId ?? null,
+      moveOnResumeColumnId: pomodoroConfig.moveOnResumeColumnId ?? null,
+      moveOnCompleteColumnId: pomodoroConfig.moveOnCompleteColumnId ?? null,
+    });
+  }, [pomodoroConfig]);
+
+  const clearTick = useCallback(() => {
+    if (tickRef.current) {
+      clearInterval(tickRef.current);
+      tickRef.current = null;
+    }
+  }, []);
+
+  const stopPomodoro = useCallback(() => {
+    clearTick();
+    setPomodoroState((prev) => ({
+      ...prev,
+      running: false,
+      stage: null,
+      secondsLeft: 0,
+      endsAt: null,
+    }));
+  }, [clearTick]);
+
+  const moveItemsBetweenColumns = useCallback(
+    async (fromColumnId: string, toColumnId: string, itemIds: string[]) => {
+      if (!fromColumnId || !toColumnId || itemIds.length === 0) return;
+      const existingIds = new Set(itemsRef.current.map((item) => item.id));
+      const idsToMove = Array.from(new Set(itemIds)).filter((id) => existingIds.has(id));
+      if (!idsToMove.length) return;
+      await moveItemsBatch(idsToMove, toColumnId);
+    },
+    [moveItemsBatch],
+  );
+
+  const startCountdown = useCallback(
+    (stage: PomodoroStage, seconds: number, cycleId: number, onDone: () => void) => {
+      clearTick();
+      const totalSeconds = Math.max(0, Math.floor(seconds));
+      const endsAt = Date.now() + totalSeconds * 1000;
+      setPomodoroState((prev) => ({
+        ...prev,
+        running: true,
+        stage,
+        secondsLeft: totalSeconds,
+        endsAt,
+        cycleId,
+      }));
+
+      tickRef.current = setInterval(() => {
+        const left = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+        setPomodoroState((prev) => ({
+          ...prev,
+          secondsLeft: left,
+        }));
+        if (left <= 0) {
+          clearTick();
+          setPomodoroState((prev) => ({
+            ...prev,
+            running: false,
+            stage: null,
+            secondsLeft: 0,
+            endsAt: null,
+          }));
+          onDone();
+        }
+      }, 1000);
+    },
+    [clearTick],
+  );
+
+  const handleRestFinished = useCallback(() => {
+    // keep lock open; user decides when to continue or complete
+  }, []);
+
+  const handleWorkFinished = useCallback(
+    (config: NonNullable<typeof pomodoroConfig>, cycleId: number) => {
+      setLockState({ open: true, cycleId });
+
+      const restSeconds =
+        typeof config.restSeconds === "number" && config.restSeconds > 0
+          ? config.restSeconds
+          : 5 * 60;
+
+      startCountdown("rest", restSeconds, cycleId, handleRestFinished);
+
+      const fromColumnId = config.applyOnColumnId ?? null;
+      const toColumnId = config.moveOnPauseColumnId ?? null;
+      if (!fromColumnId || !toColumnId) return;
+
+      const idsToMove = itemsRef.current
+        .filter((item) => item.columnId === fromColumnId)
+        .map((item) => item.id);
+      movedByCycleRef.current.set(cycleId, idsToMove);
+      moveItemsBetweenColumns(fromColumnId, toColumnId, idsToMove);
+    },
+    [handleRestFinished, moveItemsBetweenColumns, startCountdown],
+  );
+
+  const startWork = useCallback(
+    (config: NonNullable<typeof pomodoroConfig>, configHash: string | null) => {
+      const workSeconds =
+        typeof config.workSeconds === "number" && config.workSeconds > 0
+          ? config.workSeconds
+          : 25 * 60;
+
+      const nextCycleId = pomodoroState.cycleId + 1;
+      setPomodoroState((prev) => ({
+        ...prev,
+        cycleId: nextCycleId,
+        lastConfigHash: configHash,
+      }));
+
+      startCountdown("work", workSeconds, nextCycleId, () =>
+        handleWorkFinished(config, nextCycleId),
+      );
+    },
+    [handleWorkFinished, pomodoroState.cycleId, startCountdown],
+  );
+
+  const handlePomodoroDecision = useCallback(
+    async (action: "continue" | "complete") => {
+      if (!lockState.open || lockState.cycleId === null) return;
+      if (!pomodoroConfig?.enabled) {
+        setLockState({ open: false, cycleId: null });
+        return;
+      }
+
+      const sourceColumnId =
+        pomodoroConfig.moveOnPauseColumnId ?? pomodoroConfig.applyOnColumnId ?? null;
+      const targetColumnId =
+        action === "continue"
+          ? pomodoroConfig.moveOnResumeColumnId ?? null
+          : pomodoroConfig.moveOnCompleteColumnId ?? null;
+      const movedIds = movedByCycleRef.current.get(lockState.cycleId) ?? [];
+
+      if (sourceColumnId && targetColumnId && movedIds.length) {
+        await moveItemsBetweenColumns(sourceColumnId, targetColumnId, movedIds);
+      }
+
+      movedByCycleRef.current.delete(lockState.cycleId);
+      setLockState({ open: false, cycleId: null });
+    },
+    [lockState, moveItemsBetweenColumns, pomodoroConfig],
+  );
+
+  useEffect(() => {
+    return () => {
+      clearTick();
+    };
+  }, [clearTick]);
+
+  useEffect(() => {
+    setPomodoroState({
+      running: false,
+      stage: null,
+      secondsLeft: 0,
+      endsAt: null,
+      cycleId: 0,
+      lastConfigHash: null,
+    });
+    setLockState({ open: false, cycleId: null });
+    movedByCycleRef.current.clear();
+    clearTick();
+  }, [boardId, clearTick]);
+
+  useEffect(() => {
+    if (!pomodoroEnabled) {
+      stopPomodoro();
+      if (lockState.open) setLockState({ open: false, cycleId: null });
+      movedByCycleRef.current.clear();
+      return;
+    }
+
+    if (!applyOnColumnId || !baseColumnExists) {
+      if (pomodoroState.running) stopPomodoro();
+      return;
+    }
+
+    if (!baseHasItems) {
+      if (pomodoroState.running && pomodoroState.stage === "work") stopPomodoro();
+      return;
+    }
+
+    if (lockState.open) return;
+
+    if (!pomodoroState.running && pomodoroConfig) {
+      startWork(pomodoroConfig, pomodoroHash);
+      return;
+    }
+
+    if (pomodoroHash && pomodoroHash !== pomodoroState.lastConfigHash) {
+      setPomodoroState((prev) => ({ ...prev, lastConfigHash: pomodoroHash }));
+    }
+  }, [
+    applyOnColumnId,
+    baseColumnExists,
+    baseHasItems,
+    lockState.open,
+    pomodoroConfig,
+    pomodoroEnabled,
+    pomodoroHash,
+    pomodoroState.lastConfigHash,
+    pomodoroState.running,
+    pomodoroState.stage,
+    startWork,
+    stopPomodoro,
+  ]);
+
   const toggleLine = (columnId: string) => {
     setExpandedLines((current) =>
       current.includes(columnId)
@@ -86,10 +366,8 @@ export function BoardScreen() {
     );
   };
 
-  const handleMoveTo = async (toColumnId: string) => {
-    if (!moveTarget) return;
-    await moveItem(moveTarget.itemId, toColumnId);
-    setMoveTarget(null);
+  const handleMoveTo = async (itemId: string, toColumnId: string) => {
+    await moveItem(itemId, toColumnId);
   };
 
   const handleReorderLines = async (ordered: BoardColumn[]) => {
@@ -178,6 +456,15 @@ export function BoardScreen() {
               editable={!readOnly}
             />
           </Input>
+          {showPomodoro ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onPress={() => setPomodoroOpen(true)}
+            >
+              <ButtonIcon as={Timer} />
+            </Button>
+          ) : null}
           <Button
             size="sm"
             onPress={handleAddColumn}
@@ -297,34 +584,65 @@ export function BoardScreen() {
                                 </Text>
                               ) : null}
                               {!readOnly ? (
-                                <HStack space="xs" className="flex-wrap">
-                                  <Button
-                                    size="xs"
-                                    variant="outline"
-                                    onPress={() =>
-                                      setMoveTarget({
-                                        itemId: task.id,
-                                        fromColumnId: column.id,
-                                      })
-                                    }
+                                <HStack className="items-center justify-between">
+                                  <Select
+                                    key={`move-${task.id}-${column.id}`}
+                                    onValueChange={(value) => {
+                                      if (value === column.id) return;
+                                      handleMoveTo(task.id, value);
+                                    }}
+                                    isDisabled={readOnly || columns.length < 2}
+                                    initialLabel="Mover para"
                                   >
-                                    <ButtonText>Mover para</ButtonText>
-                                  </Button>
-                                  <Button
-                                    size="xs"
-                                    variant="outline"
-                                    onPress={() => setEditingItem(task)}
-                                  >
-                                    <ButtonText>Editar</ButtonText>
-                                  </Button>
-                                  <Button
-                                    size="xs"
-                                    variant="outline"
-                                    action="negative"
-                                    onPress={() => confirmDeleteItem(task)}
-                                  >
-                                    <ButtonText>Remover</ButtonText>
-                                  </Button>
+                                    <SelectTrigger
+                                      variant="outline"
+                                      size="sm"
+                                      className="rounded-xl border-outline-300 w-[140px]"
+                                    >
+                                      <SelectInput placeholder="Mover para" />
+                                      <SelectIcon
+                                        as={ChevronDown}
+                                        className="mr-2 text-typography-500"
+                                      />
+                                    </SelectTrigger>
+                                    <SelectPortal>
+                                      <SelectBackdrop />
+                                      <SelectContent>
+                                        <SelectDragIndicatorWrapper>
+                                          <SelectDragIndicator />
+                                        </SelectDragIndicatorWrapper>
+                                        <SelectScrollView className="max-h-[320px]">
+                                          {columns.map((targetColumn) => (
+                                            <SelectItem
+                                              key={targetColumn.id}
+                                              label={targetColumn.title}
+                                              value={targetColumn.id}
+                                              isDisabled={targetColumn.id === column.id}
+                                            />
+                                          ))}
+                                        </SelectScrollView>
+                                      </SelectContent>
+                                    </SelectPortal>
+                                  </Select>
+                                  <HStack space="xs" className="items-center">
+                                    <Button
+                                      size="xs"
+                                      variant="link"
+                                      onPress={() => setEditingItem(task)}
+                                      accessibilityLabel="Editar item"
+                                    >
+                                      <ButtonIcon as={Pencil} />
+                                    </Button>
+                                    <Button
+                                      size="xs"
+                                      variant="link"
+                                      action="negative"
+                                      onPress={() => confirmDeleteItem(task)}
+                                      accessibilityLabel="Remover item"
+                                    >
+                                      <ButtonIcon as={Trash2} />
+                                    </Button>
+                                  </HStack>
                                 </HStack>
                               ) : null}
                             </VStack>
@@ -351,53 +669,23 @@ export function BoardScreen() {
         </DraxProvider>
       </VStack>
 
-      <Modal visible={!!moveTarget} transparent animationType="fade">
-        <Box className="flex-1 items-center justify-center bg-black/50 px-4">
-          <Pressable className="absolute inset-0" onPress={() => setMoveTarget(null)} />
-          <Box className="w-full max-w-[520px] rounded-2xl bg-background-0 p-5">
-            <VStack space="md">
-              <Heading size="lg" className="text-typography-900">
-                Mover item
-              </Heading>
-              <Text size="sm" className="text-typography-500">
-                Selecione a linha de destino
-              </Text>
-              <VStack space="sm">
-                {columns.map((column) => {
-                  const count = itemsByColumn.get(column.id)?.length ?? 0;
-                  const disabled = column.id === moveTarget?.fromColumnId;
-                  return (
-                    <Button
-                      key={column.id}
-                      size="sm"
-                      variant="outline"
-                      isDisabled={disabled}
-                      className={disabled ? "bg-background-200" : undefined}
-                      onPress={() => handleMoveTo(column.id)}
-                    >
-                      <HStack className="items-center justify-between flex-1">
-                        <ButtonText>{column.title}</ButtonText>
-                        <Text size="xs" className="text-typography-500">
-                          {count}
-                        </Text>
-                      </HStack>
-                    </Button>
-                  );
-                })}
-              </VStack>
-              <HStack className="justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onPress={() => setMoveTarget(null)}
-                >
-                  <ButtonText>Cancelar</ButtonText>
-                </Button>
-              </HStack>
-            </VStack>
-          </Box>
-        </Box>
-      </Modal>
+      <PomodoroSettingsModal
+        visible={pomodoroOpen}
+        columns={columns}
+        pomodoro={board?.pomodoro ?? null}
+        onClose={() => setPomodoroOpen(false)}
+        onSave={async (input) => {
+          await updatePomodoro(input);
+          setPomodoroOpen(false);
+        }}
+      />
+
+      <PomodoroLockModal
+        visible={lockState.open}
+        secondsLeft={pomodoroState.secondsLeft}
+        onContinue={() => handlePomodoroDecision("continue")}
+        onComplete={() => handlePomodoroDecision("complete")}
+      />
 
       <ColumnFormModal
         visible={!!editingColumn}

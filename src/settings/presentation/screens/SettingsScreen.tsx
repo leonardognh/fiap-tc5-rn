@@ -116,6 +116,13 @@ export function SettingsScreen() {
         transitionScreen: enabled,
       },
     });
+  const setPomodoroPause = (enabled: boolean) =>
+    updatePreferences({
+      cognitiveAlerts: {
+        ...preferences.cognitiveAlerts,
+        pomodoroPause: enabled,
+      },
+    });
 
   return (
     <Box className="flex-1 bg-background-0">
@@ -313,6 +320,16 @@ export function SettingsScreen() {
               <Switch
                 value={preferences.cognitiveAlerts?.transitionScreen ?? true}
                 onValueChange={setTransitionScreen}
+              />
+            </VStack>
+
+            <VStack space="xs">
+              <Text size="sm" className="text-typography-600">
+                {t("settings.pomodoro")}
+              </Text>
+              <Switch
+                value={preferences.cognitiveAlerts?.pomodoroPause ?? true}
+                onValueChange={setPomodoroPause}
               />
             </VStack>
           </Section>

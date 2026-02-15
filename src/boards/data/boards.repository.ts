@@ -31,6 +31,21 @@ const mapBoard = (id: string, data: any): Board => {
       ? (data.memberIds as string[])
       : [];
 
+  const pomodoroRaw = data?.pomodoro ?? null;
+  const pomodoro = pomodoroRaw
+    ? {
+        enabled: !!pomodoroRaw.enabled,
+        workSeconds:
+          typeof pomodoroRaw.workSeconds === "number" ? pomodoroRaw.workSeconds : null,
+        restSeconds:
+          typeof pomodoroRaw.restSeconds === "number" ? pomodoroRaw.restSeconds : null,
+        moveOnPauseColumnId: pomodoroRaw.moveOnPauseColumnId ?? null,
+        moveOnResumeColumnId: pomodoroRaw.moveOnResumeColumnId ?? null,
+        moveOnCompleteColumnId: pomodoroRaw.moveOnCompleteColumnId ?? null,
+        applyOnColumnId: pomodoroRaw.applyOnColumnId ?? null,
+      }
+    : undefined;
+
   return {
     id,
     title: String(data?.title ?? data?.name ?? "Board"),
@@ -38,6 +53,7 @@ const mapBoard = (id: string, data: any): Board => {
     createdBy: String(data?.createdBy ?? ""),
     members,
     status: (data?.status ?? "active") as BoardStatus,
+    pomodoro,
     createdAt: toMillis(data?.createdAt),
     updatedAt: toMillis(data?.updatedAt),
   };
@@ -192,6 +208,65 @@ export async function updateBoard(
   await updateDoc(doc(firebaseDb, "boards", boardId), payload);
 }
 
+export async function updateBoardPomodoro(input: {
+  boardId: string;
+  pomodoroEnabled: boolean;
+  workSeconds?: number | null;
+  restSeconds?: number | null;
+  moveOnPauseColumnId?: string | null;
+  moveOnResumeColumnId?: string | null;
+  moveOnCompleteColumnId?: string | null;
+  applyOnColumnId?: string | null;
+}) {
+  const boardId = input.boardId?.trim();
+  if (!boardId) throw new Error("Board invalido.");
+
+  if (!input.pomodoroEnabled) {
+    await updateDoc(doc(firebaseDb, "boards", boardId), {
+      pomodoro: {
+        enabled: false,
+        workSeconds: input.workSeconds ?? null,
+        restSeconds: input.restSeconds ?? null,
+        moveOnPauseColumnId: null,
+        moveOnResumeColumnId: null,
+        moveOnCompleteColumnId: null,
+        applyOnColumnId: null,
+      },
+      updatedAt: Date.now(),
+    });
+    return;
+  }
+
+  const workSecondsRaw =
+    typeof input.workSeconds === "number" ? input.workSeconds : 1800;
+  const restSecondsRaw =
+    typeof input.restSeconds === "number" ? input.restSeconds : 300;
+
+  const workSeconds = Math.trunc(workSecondsRaw);
+  const restSeconds = Math.trunc(restSecondsRaw);
+
+  if (workSeconds < 60) {
+    throw new Error("Tempo de trabalho deve ser no minimo 60 segundos.");
+  }
+
+  if (restSeconds < 30) {
+    throw new Error("Tempo de descanso deve ser no minimo 30 segundos.");
+  }
+
+  await updateDoc(doc(firebaseDb, "boards", boardId), {
+    pomodoro: {
+      enabled: true,
+      workSeconds,
+      restSeconds,
+      moveOnPauseColumnId: input.moveOnPauseColumnId ?? null,
+      moveOnResumeColumnId: input.moveOnResumeColumnId ?? null,
+      moveOnCompleteColumnId: input.moveOnCompleteColumnId ?? null,
+      applyOnColumnId: input.applyOnColumnId ?? null,
+    },
+    updatedAt: Date.now(),
+  });
+}
+
 export async function setBoardStatus(
   boardId: string,
   status: BoardStatus,
@@ -313,4 +388,26 @@ export async function moveItem(input: {
     order: Date.now(),
     updatedAt: Date.now(),
   });
+}
+
+export async function moveItemsBatch(input: {
+  boardId: string;
+  itemIds: string[];
+  toColumnId: string;
+}) {
+  const boardId = input.boardId?.trim();
+  if (!boardId) throw new Error("Board inválido.");
+  const itemIds = Array.from(new Set(input.itemIds)).filter(Boolean);
+  if (!itemIds.length) return;
+
+  const base = Date.now();
+  const batch = writeBatch(firebaseDb);
+  itemIds.forEach((itemId, index) => {
+    batch.update(doc(firebaseDb, "boards", boardId, "items", itemId), {
+      columnId: input.toColumnId,
+      order: base + index,
+      updatedAt: base,
+    });
+  });
+  await batch.commit();
 }

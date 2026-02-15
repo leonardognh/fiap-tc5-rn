@@ -27,6 +27,16 @@ type BoardViewState = {
   }) => Promise<void>;
   deleteItem: (itemId: string) => Promise<void>;
   moveItem: (itemId: string, toColumnId: string) => Promise<void>;
+  moveItemsBatch: (itemIds: string[], toColumnId: string) => Promise<void>;
+  updatePomodoro: (input: {
+    pomodoroEnabled: boolean;
+    workSeconds?: number | null;
+    restSeconds?: number | null;
+    moveOnPauseColumnId?: string | null;
+    moveOnResumeColumnId?: string | null;
+    moveOnCompleteColumnId?: string | null;
+    applyOnColumnId?: string | null;
+  }) => Promise<void>;
 };
 
 export const useBoardViewStore = create<BoardViewState>((set, get) => ({
@@ -201,6 +211,28 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
       await repo.moveItem({ boardId, itemId, toColumnId });
     } catch (err: any) {
       set({ error: err?.message ?? "Falha ao mover item." });
+    }
+  },
+
+  moveItemsBatch: async (itemIds, toColumnId) => {
+    const boardId = get().boardId;
+    if (!boardId) return;
+    set({ error: null });
+    try {
+      await repo.moveItemsBatch({ boardId, itemIds, toColumnId });
+    } catch (err: any) {
+      set({ error: err?.message ?? "Falha ao mover itens." });
+    }
+  },
+
+  updatePomodoro: async (input) => {
+    const boardId = get().boardId;
+    if (!boardId) return;
+    set({ error: null });
+    try {
+      await repo.updateBoardPomodoro({ boardId, ...input });
+    } catch (err: any) {
+      set({ error: err?.message ?? "Falha ao atualizar pomodoro." });
     }
   },
 }));
