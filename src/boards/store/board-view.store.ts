@@ -1,4 +1,4 @@
-﻿import { create } from "zustand";
+import { create } from "zustand";
 import type { Board, BoardColumn, BoardItem } from "../types/boards";
 import * as repo from "../data/boards.repository";
 
@@ -192,15 +192,8 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
     }
   },
 
-  deleteItem: async (itemId) => {
-    const boardId = get().boardId;
-    if (!boardId) return;
-    set({ error: null });
-    try {
-      await repo.deleteItem(boardId, itemId);
-    } catch (err: any) {
-      set({ error: err?.message ?? "Falha ao remover item." });
-    }
+  deleteItem: async () => {
+    set({ error: "Remoção de itens desabilitada." });
   },
 
   moveItem: async (itemId, toColumnId) => {
@@ -236,3 +229,4 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
     }
   },
 }));
+

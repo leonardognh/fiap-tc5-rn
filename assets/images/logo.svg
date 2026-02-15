@@ -1,0 +1,58 @@
+<svg width="128" height="128" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Hackathon logo">
+  <title>Hackathon</title>
+  <rect x="92" y="14" width="72" height="32" rx="10" fill="#000"/>
+  <rect x="112" y="38" width="32" height="14" rx="7" fill="#000"/>
+  <g transform="rotate(-28 58 70)">
+    <rect x="42" y="58" width="34" height="18" rx="9" fill="#000"/>
+  </g>
+  <g transform="rotate(28 198 70)">
+    <rect x="182" y="58" width="34" height="18" rx="9" fill="#000"/>
+  </g>
+  <circle cx="128" cy="148" r="92" fill="#000"/>
+  <circle cx="128" cy="148" r="70" fill="#fff"/>
+  <path
+    d="M92 108
+       C92 104 95 101 99 101
+       H115
+       C119 101 122 104 122 108
+       V188
+       C122 192 119 195 115 195
+       H99
+       C95 195 92 192 92 188
+       Z"
+    fill="#000"
+  />
+  <path
+    d="M134 108
+       C134 104 137 101 141 101
+       H157
+       C161 101 164 104 164 108
+       V188
+       C164 192 161 195 157 195
+       H141
+       C137 195 134 192 134 188
+       Z"
+    fill="#000"
+  />
+  <path
+    d="M110 143
+       L170 120
+       C174 118 178 120 179 124
+       C180 128 178 132 174 134
+       L114 157
+       C110 159 106 157 105 153
+       C104 149 106 145 110 143
+       Z"
+    fill="#000"
+  />
+  <path
+    d="M188 206
+       C206 188 214 167 214 148
+       C214 140 213 133 211 126
+       C222 150 216 178 198 202
+       C195 205 192 207 188 206
+       Z"
+    fill="#000"
+    opacity="0.95"
+  />
+</svg>

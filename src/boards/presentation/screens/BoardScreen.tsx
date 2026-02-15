@@ -637,15 +637,6 @@ const handleAddColumn = async () => {
                                     >
                                       <ButtonIcon as={Pencil} />
                                     </Button>
-                                    <Button
-                                      size="xs"
-                                      variant="link"
-                                      action="negative"
-                                      onPress={() => confirmDeleteItem(task)}
-                                      accessibilityLabel="Remover item"
-                                    >
-                                      <ButtonIcon as={Trash2} />
-                                    </Button>
                                   </HStack>
                                 ) : null}
                               </HStack>
@@ -825,6 +816,7 @@ const handleAddColumn = async () => {
     </Box>
   );
 }
+
 
 
 
