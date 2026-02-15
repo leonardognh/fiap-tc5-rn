@@ -1,5 +1,5 @@
-﻿import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Alert, Pressable } from "react-native";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Modal, Pressable, useWindowDimensions } from "react-native";
 import { DraxList, DraxListItem, DraxProvider } from "react-native-drax";
 import { router, useLocalSearchParams } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronUp,
+  MoreVertical,
   Plus,
   Pencil,
   Timer,
@@ -20,19 +21,8 @@ import { HStack } from "@/components/ui/hstack";
 import { Text } from "@/components/ui/text";
 import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
 import { Input, InputField } from "@/components/ui/input";
-import {
-  Select,
-  SelectBackdrop,
-  SelectContent,
-  SelectDragIndicator,
-  SelectDragIndicatorWrapper,
-  SelectIcon,
-  SelectInput,
-  SelectItem,
-  SelectPortal,
-  SelectScrollView,
-  SelectTrigger,
-} from "@/components/ui/select";
+import { ConfirmModal } from "@/components/modals/ConfirmModal";
+import { useToast, Toast, ToastDescription, ToastTitle } from "@/components/ui/toast";
 
 import { useSettingsStore } from "@/src/settings/store/settings.store";
 import { useBoardViewStore } from "../../store/board-view.store";
@@ -81,6 +71,7 @@ export function BoardScreen() {
   } = useBoardViewStore();
 
   const preferences = useSettingsStore((s) => s.preferences);
+  const toast = useToast();
   const [newColumnTitle, setNewColumnTitle] = useState("");
   const [editingColumn, setEditingColumn] = useState<BoardColumn | null>(null);
   const [creatingItemFor, setCreatingItemFor] = useState<string | null>(null);
@@ -88,6 +79,20 @@ export function BoardScreen() {
   const [expandedLines, setExpandedLines] = useState<string[]>([]);
   const [orderedColumns, setOrderedColumns] = useState<BoardColumn[]>([]);
   const [pomodoroOpen, setPomodoroOpen] = useState(false);
+  const [openColumnMenuId, setOpenColumnMenuId] = useState<string | null>(null);
+  const [columnMenuAnchor, setColumnMenuAnchor] = useState<{ x: number; y: number } | null>(null);
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const menuWidth = 180;
+  const selectedColumn = openColumnMenuId
+    ? columns.find((column) => column.id === openColumnMenuId)
+    : null;
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    destructive?: boolean;
+    onConfirm: () => void;
+  } | null>(null);
   const [pomodoroState, setPomodoroState] = useState<PomodoroRuntimeState>({
     running: false,
     stage: null,
@@ -401,26 +406,43 @@ export function BoardScreen() {
     if (readOnly) return;
     await reorderColumns(ordered.map((col) => col.id));
   };
-
   const confirmDeleteColumn = (column: BoardColumn) => {
-    Alert.alert(
-      "Remover linha",
-      `Deseja remover a linha "${column.title}"? Itens serão apagados.`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        { text: "Remover", style: "destructive", onPress: () => deleteColumn(column.id) },
-      ],
-    );
+    const itemsCount = itemsByColumn.get(column.id)?.length ?? 0;
+    if (itemsCount > 0) {
+      toast.show({
+        placement: "top",
+        duration: 3000,
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="warning" variant="solid">
+            <ToastTitle>Não é possível apagar</ToastTitle>
+            <ToastDescription>
+              Remova os itens desta classificação antes de apagá-la.
+            </ToastDescription>
+          </Toast>
+        ),
+      });
+      return;
+    }
+
+    setConfirmState({
+      title: "Remover classificação",
+      message: `Deseja remover a classificação "${column.title}"?`,
+      confirmLabel: "Remover",
+      destructive: true,
+      onConfirm: () => deleteColumn(column.id),
+    });
   };
 
   const confirmDeleteItem = (item: BoardItem) => {
-    Alert.alert("Remover item", `Deseja remover "${item.title}"?`, [
-      { text: "Cancelar", style: "cancel" },
-      { text: "Remover", style: "destructive", onPress: () => deleteItem(item.id) },
-    ]);
+    setConfirmState({
+      title: "Remover item",
+      message: `Deseja remover "${item.title}"?`,
+      confirmLabel: "Remover",
+      destructive: true,
+      onConfirm: () => deleteItem(item.id),
+    });
   };
-
-  const handleAddColumn = async () => {
+const handleAddColumn = async () => {
     if (!newColumnTitle.trim()) return;
     await createColumn(newColumnTitle);
     setNewColumnTitle("");
@@ -457,7 +479,7 @@ export function BoardScreen() {
           </Button>
           <Input className="border-outline-300 rounded-xl flex-1">
             <InputField
-              placeholder="Novo status"
+              placeholder="Nova classificação"
               value={newColumnTitle}
               onChangeText={setNewColumnTitle}
               onSubmitEditing={handleAddColumn}
@@ -555,8 +577,8 @@ export function BoardScreen() {
                       <Box
                         className="rounded-2xl border border-outline-200 bg-background-50 p-4"
                       >
-                    <HStack className="items-center justify-between">
-                      <Pressable onPress={() => toggleLine(column.id)} style={{ flex: 1 }}>
+                        <HStack className="items-center justify-between">
+                         <Pressable onPress={() => toggleLine(column.id)} style={{ flex: 1 }}>
                         <VStack space="xs">
                           <Text size="md" className="font-semibold text-typography-900">
                             {column.title}
@@ -568,23 +590,21 @@ export function BoardScreen() {
                       </Pressable>
                       <HStack space="xs" className="items-center">
                         {!readOnly ? (
-                          <>
-                            <Button
-                              size="xs"
-                              variant="link"
-                              onPress={() => setEditingColumn(column)}
-                            >
-                              <ButtonIcon as={Pencil} />
-                            </Button>
-                            <Button
-                              size="xs"
-                              variant="link"
-                              action="negative"
-                              onPress={() => confirmDeleteColumn(column)}
-                            >
-                              <ButtonIcon as={Trash2} />
-                            </Button>
-                          </>
+                          <Pressable
+                            onPress={(event) => {
+                              event.stopPropagation?.();
+                              const { pageX, pageY } = event.nativeEvent;
+                              setOpenColumnMenuId((current) =>
+                                current === column.id ? null : column.id,
+                              );
+                              setColumnMenuAnchor({ x: pageX, y: pageY });
+                            }}
+                            hitSlop={8}
+                          >
+                            <Box className="rounded-full border border-outline-200 bg-background-0 p-2">
+                              <MoreVertical size={16} color="#475569" />
+    </Box>
+                          </Pressable>
                         ) : null}
                         <Pressable onPress={() => toggleLine(column.id)} hitSlop={8}>
                           <Box className="rounded-full border border-outline-200 bg-background-0 p-2">
@@ -612,55 +632,11 @@ export function BoardScreen() {
                             className="rounded-xl border border-outline-200 bg-background-0 p-3"
                           >
                             <VStack space="xs">
-                              <Text size="sm" className="font-semibold text-typography-900">
-                                {task.title}
-                              </Text>
-                              {task.description ? (
-                                <Text size="xs" className="text-typography-600">
-                                  {task.description}
+                              <HStack className="items-start justify-between">
+                                <Text size="sm" className="font-semibold text-typography-900 flex-1 pr-2">
+                                  {task.title}
                                 </Text>
-                              ) : null}
-                              {!readOnly ? (
-                                <HStack className="items-center justify-between">
-                                  <Select
-                                    key={`move-${task.id}-${column.id}`}
-                                    onValueChange={(value) => {
-                                      if (value === column.id) return;
-                                      handleMoveTo(task.id, value);
-                                    }}
-                                    isDisabled={readOnly || columns.length < 2}
-                                    initialLabel="Mover para"
-                                  >
-                                    <SelectTrigger
-                                      variant="outline"
-                                      size="sm"
-                                      className="rounded-xl border-outline-300 w-[140px]"
-                                    >
-                                      <SelectInput placeholder="Mover para" />
-                                      <SelectIcon
-                                        as={ChevronDown}
-                                        className="mr-2 text-typography-500"
-                                      />
-                                    </SelectTrigger>
-                                    <SelectPortal>
-                                      <SelectBackdrop />
-                                      <SelectContent>
-                                        <SelectDragIndicatorWrapper>
-                                          <SelectDragIndicator />
-                                        </SelectDragIndicatorWrapper>
-                                        <SelectScrollView className="max-h-[320px]">
-                                          {columns.map((targetColumn) => (
-                                            <SelectItem
-                                              key={targetColumn.id}
-                                              label={targetColumn.title}
-                                              value={targetColumn.id}
-                                              isDisabled={targetColumn.id === column.id}
-                                            />
-                                          ))}
-                                        </SelectScrollView>
-                                      </SelectContent>
-                                    </SelectPortal>
-                                  </Select>
+                                {!readOnly ? (
                                   <HStack space="xs" className="items-center">
                                     <Button
                                       size="xs"
@@ -680,7 +656,12 @@ export function BoardScreen() {
                                       <ButtonIcon as={Trash2} />
                                     </Button>
                                   </HStack>
-                                </HStack>
+                                ) : null}
+                              </HStack>
+                              {task.description ? (
+                                <Text size="xs" className="text-typography-600">
+                                  {task.description}
+                                </Text>
                               ) : null}
                             </VStack>
                           </Box>
@@ -707,6 +688,62 @@ export function BoardScreen() {
           </DraxProvider>
         </Box>
       </VStack>
+
+
+      <Modal transparent visible={!!openColumnMenuId} animationType="fade">
+        <Pressable
+          className="flex-1"
+          onPress={() => {
+            setOpenColumnMenuId(null);
+            setColumnMenuAnchor(null);
+          }}
+        >
+          {openColumnMenuId && columnMenuAnchor ? (
+            <Box
+              className="absolute rounded-xl border border-outline-200 bg-background-0 p-3 shadow-lg"
+              style={{
+                width: menuWidth,
+                zIndex: 9999,
+                elevation: 20,
+                left: Math.min(
+                  Math.max(16, columnMenuAnchor.x - menuWidth + 24),
+                  windowWidth - menuWidth - 16,
+                ),
+                top: Math.min(columnMenuAnchor.y + 12, windowHeight - 180),
+              }}
+            >
+              <Pressable
+                onPress={(event) => {
+                  event.stopPropagation?.();
+                  if (!selectedColumn) return;
+                  setEditingColumn(selectedColumn);
+                  setOpenColumnMenuId(null);
+                  setColumnMenuAnchor(null);
+                }}
+              >
+                <HStack space="sm" className="items-center py-2">
+                  <Pencil size={16} color="#475569" />
+                  <Text className="text-typography-900">Editar</Text>
+                </HStack>
+              </Pressable>
+              <Pressable
+                onPress={(event) => {
+                  event.stopPropagation?.();
+                  if (!selectedColumn) return;
+                  confirmDeleteColumn(selectedColumn);
+                  setOpenColumnMenuId(null);
+                  setColumnMenuAnchor(null);
+                }}
+              >
+                <HStack space="sm" className="items-center py-2">
+                  <Trash2 size={16} color="#ef4444" />
+                  <Text className="text-typography-900">Remover</Text>
+                </HStack>
+              </Pressable>
+            </Box>
+          ) : null}
+        </Pressable>
+      </Modal>
 
       <PomodoroSettingsModal
         visible={pomodoroOpen}
@@ -758,6 +795,16 @@ export function BoardScreen() {
         visible={!!editingItem}
         title="Editar item"
         confirmLabel="Salvar"
+        moveOptions={
+          editingItem
+            ? {
+                columns,
+                currentColumnId: editingItem.columnId,
+                onMove: (value) => handleMoveTo(editingItem.id, value),
+                disabled: readOnly || columns.length < 2,
+              }
+            : undefined
+        }
         initial={
           editingItem
             ? { title: editingItem.title, description: editingItem.description }
@@ -774,9 +821,53 @@ export function BoardScreen() {
           setEditingItem(null);
         }}
       />
+    
+      <ConfirmModal
+        visible={!!confirmState}
+        title={confirmState?.title ?? ""}
+        message={confirmState?.message ?? ""}
+        confirmLabel={confirmState?.confirmLabel}
+        destructive={confirmState?.destructive}
+        onClose={() => setConfirmState(null)}
+        onConfirm={() => { confirmState?.onConfirm?.(); setConfirmState(null); }}
+      />
     </Box>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

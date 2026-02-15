@@ -6,13 +6,34 @@ import { HStack } from "@/components/ui/hstack";
 import { Heading } from "@/components/ui/heading";
 import { Input, InputField } from "@/components/ui/input";
 import { Button, ButtonText } from "@/components/ui/button";
+import {
+  Select,
+  SelectBackdrop,
+  SelectContent,
+  SelectDragIndicator,
+  SelectDragIndicatorWrapper,
+  SelectIcon,
+  SelectInput,
+  SelectItem,
+  SelectPortal,
+  SelectScrollView,
+  SelectTrigger,
+} from "@/components/ui/select";
+import { ChevronDown } from "lucide-react-native";
 import type { ItemFormInput } from "../../types/boards";
+import type { BoardColumn } from "../../types/boards";
 
 type ItemFormModalProps = {
   visible: boolean;
   title: string;
   confirmLabel?: string;
   initial?: ItemFormInput;
+  moveOptions?: {
+    columns: BoardColumn[];
+    currentColumnId: string;
+    onMove: (columnId: string) => void;
+    disabled?: boolean;
+  };
   onClose: () => void;
   onConfirm: (input: ItemFormInput) => void;
 };
@@ -22,6 +43,7 @@ export function ItemFormModal({
   title,
   confirmLabel = "Salvar",
   initial,
+  moveOptions,
   onClose,
   onConfirm,
 }: ItemFormModalProps) {
@@ -68,6 +90,44 @@ export function ItemFormModal({
                   className="min-h-[120px] py-2 text-typography-900"
                 />
               </Input>
+
+              {moveOptions ? (
+                <Select
+                  onValueChange={(value) => {
+                    if (value === moveOptions.currentColumnId) return;
+                    moveOptions.onMove(value);
+                  }}
+                  isDisabled={moveOptions.disabled}
+                  initialLabel="Mover para"
+                >
+                  <SelectTrigger
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl border-outline-300 w-full"
+                  >
+                    <SelectInput placeholder="Mover para" />
+                    <SelectIcon as={ChevronDown} className="mr-2 text-typography-500" />
+                  </SelectTrigger>
+                  <SelectPortal>
+                    <SelectBackdrop />
+                    <SelectContent>
+                      <SelectDragIndicatorWrapper>
+                        <SelectDragIndicator />
+                      </SelectDragIndicatorWrapper>
+                      <SelectScrollView className="max-h-[320px]">
+                        {moveOptions.columns.map((column) => (
+                          <SelectItem
+                            key={column.id}
+                            label={column.title}
+                            value={column.id}
+                            isDisabled={column.id === moveOptions.currentColumnId}
+                          />
+                        ))}
+                      </SelectScrollView>
+                    </SelectContent>
+                  </SelectPortal>
+                </Select>
+              ) : null}
             </VStack>
 
             <HStack space="sm" className="justify-end">
