@@ -1,10 +1,11 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { Modal, Pressable, ScrollView, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
 import {
   Archive,
   ArchiveRestore,
+  MoreVertical,
   Pencil,
   Plus,
   Search,
@@ -57,6 +58,13 @@ export function BoardsListScreen() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<Board | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number } | null>(null);
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const menuWidth = 180;
+  const selectedBoard = openMenuId
+    ? items.find((board) => board.id === openMenuId)
+    : null;
 
   useEffect(() => {
     return subscribe(user?.uid ?? null);
@@ -160,7 +168,7 @@ export function BoardsListScreen() {
               <Text className="text-typography-600">
                 {query.status === "archived"
                   ? "Nenhum board arquivado."
-                  : "Nenhum board encontrado. Crie o primeiro para começar."}
+                  : "Nenhum board encontrado. Crie o primeiro para come�ar."}
               </Text>
             </Box>
           ) : null}
@@ -198,7 +206,9 @@ export function BoardsListScreen() {
                       })
                     }
                   >
-                    <Box className="rounded-2xl border border-outline-200 bg-background-0 p-4">
+                    <Box
+                      className="rounded-2xl border border-outline-200 bg-background-0 p-4 relative"
+                    >
                       <VStack space="sm">
                         <HStack className="items-start justify-between">
                           <VStack space="xs" className="flex-1 pr-2">
@@ -222,34 +232,23 @@ export function BoardsListScreen() {
                               </Text>
                             </Box>
                           </VStack>
-                          <HStack space="xs" className="items-center">
+                          <Box className="relative">
                             <Pressable
                               onPress={(event) => {
                                 event.stopPropagation?.();
-                                setEditing(board);
+                                const { pageX, pageY } = event.nativeEvent;
+                                setOpenMenuId((current) =>
+                                  current === board.id ? null : board.id,
+                                );
+                                setMenuAnchor({ x: pageX, y: pageY });
                               }}
                               hitSlop={8}
                             >
                               <Box className="rounded-full border border-outline-200 bg-background-0 p-2">
-                                <Pencil size={16} color="#475569" />
+                                <MoreVertical size={16} color="#475569" />
                               </Box>
                             </Pressable>
-                            <Pressable
-                              onPress={(event) => {
-                                event.stopPropagation?.();
-                                onConfirmArchive(board);
-                              }}
-                              hitSlop={8}
-                            >
-                              <Box className="rounded-full border border-outline-200 bg-background-0 p-2">
-                                {board.status === "archived" ? (
-                                  <ArchiveRestore size={16} color="#475569" />
-                                ) : (
-                                  <Archive size={16} color="#475569" />
-                                )}
-                              </Box>
-                            </Pressable>
-                          </HStack>
+                          </Box>
                         </HStack>
 
                         {board.description ? (
@@ -272,6 +271,71 @@ export function BoardsListScreen() {
           </VStack>
         </ScrollView>
       </VStack>
+
+
+      
+      <Modal transparent visible={!!openMenuId} animationType="fade">
+        <Pressable
+          className="flex-1"
+          onPress={() => {
+            setOpenMenuId(null);
+            setMenuAnchor(null);
+          }}
+        >
+          {openMenuId && menuAnchor ? (
+            <Box
+              className="absolute rounded-xl border border-outline-200 bg-background-0 p-3 shadow-lg"
+              style={{
+                width: menuWidth,
+                zIndex: 9999,
+                elevation: 20,
+                left: Math.min(
+                  Math.max(16, menuAnchor.x - menuWidth + 24),
+                  windowWidth - menuWidth - 16,
+                ),
+                top: Math.min(menuAnchor.y + 12, windowHeight - 180),
+              }}
+            >
+              <Pressable
+                onPress={(event) => {
+                  event.stopPropagation?.();
+                  if (!selectedBoard) return;
+                  setEditing(selectedBoard);
+                  setOpenMenuId(null);
+                  setMenuAnchor(null);
+                }}
+              >
+                <HStack space="sm" className="items-center py-2">
+                  <Pencil size={16} color="#475569" />
+                  <Text className="text-typography-900">Editar</Text>
+                </HStack>
+              </Pressable>
+              <Pressable
+                onPress={(event) => {
+                  event.stopPropagation?.();
+                  if (!selectedBoard) return;
+                  onConfirmArchive(selectedBoard);
+                  setOpenMenuId(null);
+                  setMenuAnchor(null);
+                }}
+              >
+                <HStack space="sm" className="items-center py-2">
+                  {selectedBoard?.status === "archived" ? (
+                    <ArchiveRestore size={16} color="#475569" />
+                  ) : (
+                    <Archive size={16} color="#475569" />
+                  )}
+                  <Text className="text-typography-900">
+                    {selectedBoard?.status === "archived"
+                      ? "Desarquivar"
+                      : "Arquivar"}
+                  </Text>
+                </HStack>
+              </Pressable>
+            </Box>
+          ) : null}
+        </Pressable>
+      </Modal>
 
       <BoardFormModal
         visible={createOpen}
@@ -313,6 +377,25 @@ export function BoardsListScreen() {
     </Box>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
