@@ -1,7 +1,7 @@
 ﻿import { Eye, EyeOff } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Image, ScrollView } from "react-native";
+import { Alert, Image, Pressable, ScrollView, useWindowDimensions } from "react-native";
 
 import { Box } from "@/components/ui/box";
 import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
@@ -19,11 +19,15 @@ import type { ThemeMode, UserPreferences } from "../../types/settings";
 const Section = ({
   title,
   children,
+  className,
 }: {
   title: string;
   children: React.ReactNode;
+  className?: string;
 }) => (
-  <Box className="rounded-2xl border border-outline-200 bg-background-0 p-4">
+  <Box
+    className={`rounded-2xl border border-outline-200 bg-background-0 p-4 ${className ?? ""}`}
+  >
     <VStack space="md">
       <Text size="md" className="text-typography-900 font-semibold">
         {title}
@@ -55,6 +59,9 @@ export function SettingsScreen() {
   const [draftConfirm, setDraftConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [focusHelpOpen, setFocusHelpOpen] = useState(false);
+  const { width: windowWidth } = useWindowDimensions();
+  const focusTooltipWidth = Math.min(220, Math.max(180, windowWidth - 48));
 
   useEffect(() => {
     return connect(user?.uid ?? null);
@@ -107,25 +114,82 @@ export function SettingsScreen() {
     i18n.changeLanguage(language);
   };
 
-  const setAnimations = (enabled: boolean) =>
+  const focusModeEnabled = preferences.focusMode ?? false;
+
+  const setAnimations = (enabled: boolean) => {
+    if (focusModeEnabled) return;
     updatePreferences({ animations: enabled });
-  const setTransitionScreen = (enabled: boolean) =>
+  };
+  const setTransitionScreen = (enabled: boolean) => {
+    if (focusModeEnabled) return;
     updatePreferences({
       cognitiveAlerts: {
         ...preferences.cognitiveAlerts,
         transitionScreen: enabled,
       },
     });
-  const setPomodoroPause = (enabled: boolean) =>
+  };
+  const setFocusMode = (enabled: boolean) => {
+    if (enabled) {
+      updatePreferences({
+        focusMode: true,
+        animations: false,
+        pomodoroPause: false,
+        cognitiveAlerts: {
+          ...preferences.cognitiveAlerts,
+          transitionScreen: false,
+          pomodoroPause: false,
+        },
+      });
+      return;
+    }
+
+    updatePreferences({ focusMode: false });
+  };
+  const setPomodoroPause = (enabled: boolean) => {
+    if (focusModeEnabled) return;
     updatePreferences({
       cognitiveAlerts: {
         ...preferences.cognitiveAlerts,
         pomodoroPause: enabled,
       },
     });
+  };
+
+  useEffect(() => {
+    if (!focusModeEnabled) return;
+    if (
+      preferences.animations ||
+      preferences.cognitiveAlerts?.transitionScreen ||
+      preferences.cognitiveAlerts?.pomodoroPause
+    ) {
+      updatePreferences({
+        animations: false,
+        pomodoroPause: false,
+        cognitiveAlerts: {
+          ...preferences.cognitiveAlerts,
+          transitionScreen: false,
+          pomodoroPause: false,
+        },
+      });
+    }
+  }, [
+    focusModeEnabled,
+    preferences.animations,
+    preferences.cognitiveAlerts,
+    preferences.cognitiveAlerts?.transitionScreen,
+    preferences.cognitiveAlerts?.pomodoroPause,
+    updatePreferences,
+  ]);
 
   return (
-    <Box className="flex-1 bg-background-0">
+    <Box className="flex-1 bg-background-0 relative">
+      {focusHelpOpen ? (
+        <Pressable
+          onPress={() => setFocusHelpOpen(false)}
+          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 40 }}
+        />
+      ) : null}
       <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 32 }}>
         <VStack space="lg">
           {loading ? (
@@ -282,8 +346,9 @@ export function SettingsScreen() {
                 {t("settings.animations")}
               </Text>
               <Switch
-                value={preferences.animations}
+                value={focusModeEnabled ? false : preferences.animations}
                 onValueChange={setAnimations}
+                disabled={focusModeEnabled}
               />
             </VStack>
 
@@ -312,14 +377,96 @@ export function SettingsScreen() {
             </VStack>
           </Section>
 
+          <Section
+            title={t("settings.focus_mode")}
+            className={
+              focusHelpOpen
+                ? "relative z-50 overflow-visible"
+                : "relative overflow-visible"
+            }
+          >
+            <HStack space="sm" className="items-center overflow-visible relative">
+              <Pressable
+                onPress={() => setFocusMode(!focusModeEnabled)}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: focusModeEnabled }}
+              >
+                <Box
+                  className={`h-5 w-5 items-center justify-center rounded border ${
+                    focusModeEnabled
+                      ? "bg-primary-600 border-primary-600"
+                      : "bg-background-0 border-outline-300"
+                  }`}
+                >
+                  {focusModeEnabled ? (
+                    <Text size="xs" className="text-typography-0 font-semibold">✓</Text>
+                  ) : null}
+                </Box>
+              </Pressable>
+
+              <HStack space="xs" className="items-center overflow-visible relative">
+                <Pressable onPress={() => setFocusMode(!focusModeEnabled)}>
+                  <Text size="sm" className="text-typography-600">
+                    {t("settings.focus_mode_label")}
+                  </Text>
+                </Pressable>
+
+                <Box className="relative">
+                  <Pressable
+                    onPress={() => setFocusHelpOpen((value) => !value)}
+                    onHoverIn={() => setFocusHelpOpen(true)}
+                    onHoverOut={() => setFocusHelpOpen(false)}
+                    accessibilityLabel={t("settings.focus_mode_help_title")}
+                  >
+                    <Box className="h-4 w-4 items-center justify-center rounded-full border border-outline-300">
+                      <Text size="xs" className="text-typography-500 font-semibold">
+                        ?
+                      </Text>
+                    </Box>
+                  </Pressable>
+
+                  {focusHelpOpen ? (
+                    <Box
+                      className="absolute right-0 top-full z-50 mt-2 rounded-md border border-outline-200 bg-background-0 p-3 shadow-lg"
+                      style={{ zIndex: 9999, elevation: 20, width: focusTooltipWidth }}
+                    >
+                      <Text size="xs" className="text-typography-900 font-semibold mb-1">
+                        {t("settings.focus_mode_help_title")}
+                      </Text>
+                      <VStack space="xs">
+                        <Text size="xs" className="text-typography-600">
+                          • {t("settings.focus_mode_help_1")}
+                        </Text>
+                        <Text size="xs" className="text-typography-600">
+                          • {t("settings.focus_mode_help_2")}
+                        </Text>
+                        <Text size="xs" className="text-typography-600">
+                          • {t("settings.focus_mode_help_3")}
+                        </Text>
+                        <Text size="xs" className="text-typography-600">
+                          • {t("settings.focus_mode_help_4")}
+                        </Text>
+                      </VStack>
+                    </Box>
+                  ) : null}
+                </Box>
+              </HStack>
+            </HStack>
+          </Section>
+
           <Section title={t("settings.cognitive_alerts")}>
             <VStack space="xs">
               <Text size="sm" className="text-typography-600">
                 {t("settings.transition_screen")}
               </Text>
               <Switch
-                value={preferences.cognitiveAlerts?.transitionScreen ?? true}
+                value={
+                  focusModeEnabled
+                    ? false
+                    : preferences.cognitiveAlerts?.transitionScreen ?? true
+                }
                 onValueChange={setTransitionScreen}
+                disabled={focusModeEnabled}
               />
             </VStack>
 
@@ -328,8 +475,13 @@ export function SettingsScreen() {
                 {t("settings.pomodoro")}
               </Text>
               <Switch
-                value={preferences.cognitiveAlerts?.pomodoroPause ?? true}
+                value={
+                  focusModeEnabled
+                    ? false
+                    : preferences.cognitiveAlerts?.pomodoroPause ?? true
+                }
                 onValueChange={setPomodoroPause}
+                disabled={focusModeEnabled}
               />
             </VStack>
           </Section>
@@ -338,3 +490,6 @@ export function SettingsScreen() {
     </Box>
   );
 }
+
+
+

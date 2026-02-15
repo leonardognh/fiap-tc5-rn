@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
@@ -160,7 +160,7 @@ export function BoardsListScreen() {
               <Text className="text-typography-600">
                 {query.status === "archived"
                   ? "Nenhum board arquivado."
-                  : "Nenhum board encontrado. Crie o primeiro para come�ar."}
+                  : "Nenhum board encontrado. Crie o primeiro para começar."}
               </Text>
             </Box>
           ) : null}
