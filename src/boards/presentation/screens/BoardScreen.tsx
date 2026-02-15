@@ -1,7 +1,15 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
-import { Alert, ScrollView } from "react-native";
+import { Alert, Modal, Pressable } from "react-native";
+import { DraxList, DraxListItem, DraxProvider } from "react-native-drax";
 import { router, useLocalSearchParams } from "expo-router";
-import { ChevronLeft, ChevronRight, Plus, Pencil, Trash2 } from "lucide-react-native";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronUp,
+  Plus,
+  Pencil,
+  Trash2,
+} from "lucide-react-native";
 
 import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";
@@ -36,17 +44,27 @@ export function BoardScreen() {
     updateItem,
     deleteItem,
     moveItem,
+    reorderColumns,
   } = useBoardViewStore();
 
   const [newColumnTitle, setNewColumnTitle] = useState("");
   const [editingColumn, setEditingColumn] = useState<BoardColumn | null>(null);
   const [creatingItemFor, setCreatingItemFor] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<BoardItem | null>(null);
+  const [expandedLines, setExpandedLines] = useState<string[]>([]);
+  const [orderedColumns, setOrderedColumns] = useState<BoardColumn[]>([]);
+  const [moveTarget, setMoveTarget] = useState<
+    { itemId: string; fromColumnId: string } | null
+  >(null);
 
   useEffect(() => {
     if (!boardId) return;
     return connect(boardId);
   }, [boardId, connect]);
+
+  useEffect(() => {
+    setOrderedColumns(columns);
+  }, [columns]);
 
   const readOnly = board?.status === "archived";
 
@@ -60,10 +78,29 @@ export function BoardScreen() {
     return map;
   }, [items]);
 
+  const toggleLine = (columnId: string) => {
+    setExpandedLines((current) =>
+      current.includes(columnId)
+        ? current.filter((id) => id !== columnId)
+        : [...current, columnId],
+    );
+  };
+
+  const handleMoveTo = async (toColumnId: string) => {
+    if (!moveTarget) return;
+    await moveItem(moveTarget.itemId, toColumnId);
+    setMoveTarget(null);
+  };
+
+  const handleReorderLines = async (ordered: BoardColumn[]) => {
+    if (readOnly) return;
+    await reorderColumns(ordered.map((col) => col.id));
+  };
+
   const confirmDeleteColumn = (column: BoardColumn) => {
     Alert.alert(
-      "Remover coluna",
-      `Deseja remover a coluna "${column.title}"? Itens serão apagados.`,
+      "Remover linha",
+      `Deseja remover a linha "${column.title}"? Itens serão apagados.`,
       [
         { text: "Cancelar", style: "cancel" },
         { text: "Remover", style: "destructive", onPress: () => deleteColumn(column.id) },
@@ -135,7 +172,7 @@ export function BoardScreen() {
         <HStack space="sm" className="items-center">
           <Input className="border-outline-300 rounded-xl flex-1">
             <InputField
-              placeholder="Nova coluna"
+              placeholder="Nova linha"
               value={newColumnTitle}
               onChangeText={setNewColumnTitle}
               editable={!readOnly}
@@ -148,7 +185,6 @@ export function BoardScreen() {
             className={readOnly ? "bg-background-300" : undefined}
           >
             <ButtonIcon as={Plus} />
-            <ButtonText>Adicionar</ButtonText>
           </Button>
         </HStack>
 
@@ -156,89 +192,128 @@ export function BoardScreen() {
           <Text className="text-typography-500">Carregando...</Text>
         ) : null}
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <HStack space="md" className="pr-8">
-            {columns.map((column, index) => {
+        <DraxProvider>
+          <DraxList
+            data={orderedColumns}
+            keyExtractor={(column) => column.id}
+            contentContainerStyle={{ paddingBottom: 32 }}
+            longPressDelay={150}
+            reorderable={!readOnly}
+            onItemReorder={({ fromIndex, toIndex }) => {
+              if (readOnly || fromIndex === toIndex) return;
+              setOrderedColumns((prev) => {
+                const updated = [...prev];
+                const [moved] = updated.splice(fromIndex, 1);
+                updated.splice(toIndex, 0, moved);
+                handleReorderLines(updated);
+                return updated;
+              });
+            }}
+            renderItem={(info, itemProps) => {
+              const column = info.item;
               const columnItems = itemsByColumn.get(column.id) ?? [];
+              const expanded = expandedLines.includes(column.id);
+              const countLabel = columnItems.length === 1 ? "item" : "itens";
               return (
-                <Box
-                  key={column.id}
-                  className="w-72 rounded-2xl border border-outline-200 bg-background-50 p-4"
+                <DraxListItem
+                  itemProps={itemProps}
+                  draggable={!readOnly}
+                  style={{ marginBottom: 16 }}
+                  animateSnap={false}
+                  snapDelay={0}
+                  snapDuration={0}
+                  draggingStyle={{ opacity: 0 }}
+                  dragReleasedStyle={{ opacity: 1 }}
+                  hoverStyle={{ opacity: 1 }}
+                  hoverDraggingStyle={{ opacity: 1 }}
+                  hoverDragReleasedStyle={{ opacity: 0 }}
                 >
-                  <VStack space="sm">
+                  <Box
+                    className="rounded-2xl border border-outline-200 bg-background-50 p-4"
+                  >
                     <HStack className="items-center justify-between">
-                      <Text size="md" className="font-semibold text-typography-900">
-                        {column.title}
-                      </Text>
-                      {!readOnly ? (
-                        <HStack space="xs">
-                          <Button
-                            size="xs"
-                            variant="link"
-                            onPress={() => setEditingColumn(column)}
-                          >
-                            <ButtonIcon as={Pencil} />
-                          </Button>
-                          <Button
-                            size="xs"
-                            variant="link"
-                            action="negative"
-                            onPress={() => confirmDeleteColumn(column)}
-                          >
-                            <ButtonIcon as={Trash2} />
-                          </Button>
-                        </HStack>
-                      ) : null}
+                      <Pressable onPress={() => toggleLine(column.id)} style={{ flex: 1 }}>
+                        <VStack space="xs">
+                          <Text size="md" className="font-semibold text-typography-900">
+                            {column.title}
+                          </Text>
+                          <Text size="xs" className="text-typography-500">
+                            {columnItems.length} {countLabel}
+                          </Text>
+                        </VStack>
+                      </Pressable>
+                      <HStack space="xs" className="items-center">
+                        {!readOnly ? (
+                          <>
+                            <Button
+                              size="xs"
+                              variant="link"
+                              onPress={() => setEditingColumn(column)}
+                            >
+                              <ButtonIcon as={Pencil} />
+                            </Button>
+                            <Button
+                              size="xs"
+                              variant="link"
+                              action="negative"
+                              onPress={() => confirmDeleteColumn(column)}
+                            >
+                              <ButtonIcon as={Trash2} />
+                            </Button>
+                          </>
+                        ) : null}
+                        <Pressable onPress={() => toggleLine(column.id)} hitSlop={8}>
+                          <Box className="rounded-full border border-outline-200 bg-background-0 p-2">
+                            {expanded ? (
+                              <ChevronUp size={16} color="#475569" />
+                            ) : (
+                              <ChevronDown size={16} color="#475569" />
+                            )}
+                          </Box>
+                        </Pressable>
+                      </HStack>
                     </HStack>
 
-                    <VStack space="sm">
-                      {columnItems.length === 0 ? (
-                        <Text size="xs" className="text-typography-500">
-                          Sem itens nesta coluna.
-                        </Text>
-                      ) : null}
+                    {expanded ? (
+                      <VStack space="sm" className="mt-3">
+                        {columnItems.length === 0 ? (
+                          <Text size="xs" className="text-typography-500">
+                            Sem itens nesta linha.
+                          </Text>
+                        ) : null}
 
-                      {columnItems.map((item) => {
-                        const prevCol = columns[index - 1];
-                        const nextCol = columns[index + 1];
-                        return (
+                        {columnItems.map((task) => (
                           <Box
-                            key={item.id}
+                            key={task.id}
                             className="rounded-xl border border-outline-200 bg-background-0 p-3"
                           >
                             <VStack space="xs">
                               <Text size="sm" className="font-semibold text-typography-900">
-                                {item.title}
+                                {task.title}
                               </Text>
-                              {item.description ? (
+                              {task.description ? (
                                 <Text size="xs" className="text-typography-600">
-                                  {item.description}
+                                  {task.description}
                                 </Text>
                               ) : null}
                               {!readOnly ? (
                                 <HStack space="xs" className="flex-wrap">
-                                  {prevCol ? (
-                                    <Button
-                                      size="xs"
-                                      variant="outline"
-                                      onPress={() => moveItem(item.id, prevCol.id)}
-                                    >
-                                      <ButtonIcon as={ChevronLeft} />
-                                    </Button>
-                                  ) : null}
-                                  {nextCol ? (
-                                    <Button
-                                      size="xs"
-                                      variant="outline"
-                                      onPress={() => moveItem(item.id, nextCol.id)}
-                                    >
-                                      <ButtonIcon as={ChevronRight} />
-                                    </Button>
-                                  ) : null}
                                   <Button
                                     size="xs"
                                     variant="outline"
-                                    onPress={() => setEditingItem(item)}
+                                    onPress={() =>
+                                      setMoveTarget({
+                                        itemId: task.id,
+                                        fromColumnId: column.id,
+                                      })
+                                    }
+                                  >
+                                    <ButtonText>Mover para</ButtonText>
+                                  </Button>
+                                  <Button
+                                    size="xs"
+                                    variant="outline"
+                                    onPress={() => setEditingItem(task)}
                                   >
                                     <ButtonText>Editar</ButtonText>
                                   </Button>
@@ -246,7 +321,7 @@ export function BoardScreen() {
                                     size="xs"
                                     variant="outline"
                                     action="negative"
-                                    onPress={() => confirmDeleteItem(item)}
+                                    onPress={() => confirmDeleteItem(task)}
                                   >
                                     <ButtonText>Remover</ButtonText>
                                   </Button>
@@ -254,31 +329,79 @@ export function BoardScreen() {
                               ) : null}
                             </VStack>
                           </Box>
-                        );
-                      })}
-                    </VStack>
+                        ))}
 
-                    {!readOnly ? (
-                      <Button
-                        size="xs"
-                        variant="outline"
-                        onPress={() => setCreatingItemFor(column.id)}
-                      >
-                        <ButtonIcon as={Plus} />
-                        <ButtonText>Novo item</ButtonText>
-                      </Button>
+                        {!readOnly ? (
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            onPress={() => setCreatingItemFor(column.id)}
+                          >
+                            <ButtonIcon as={Plus} />
+                            <ButtonText>Novo item</ButtonText>
+                          </Button>
+                        ) : null}
+                      </VStack>
                     ) : null}
-                  </VStack>
-                </Box>
+                  </Box>
+                </DraxListItem>
               );
-            })}
-          </HStack>
-        </ScrollView>
+            }}
+          />
+        </DraxProvider>
       </VStack>
+
+      <Modal visible={!!moveTarget} transparent animationType="fade">
+        <Box className="flex-1 items-center justify-center bg-black/50 px-4">
+          <Pressable className="absolute inset-0" onPress={() => setMoveTarget(null)} />
+          <Box className="w-full max-w-[520px] rounded-2xl bg-background-0 p-5">
+            <VStack space="md">
+              <Heading size="lg" className="text-typography-900">
+                Mover item
+              </Heading>
+              <Text size="sm" className="text-typography-500">
+                Selecione a linha de destino
+              </Text>
+              <VStack space="sm">
+                {columns.map((column) => {
+                  const count = itemsByColumn.get(column.id)?.length ?? 0;
+                  const disabled = column.id === moveTarget?.fromColumnId;
+                  return (
+                    <Button
+                      key={column.id}
+                      size="sm"
+                      variant="outline"
+                      isDisabled={disabled}
+                      className={disabled ? "bg-background-200" : undefined}
+                      onPress={() => handleMoveTo(column.id)}
+                    >
+                      <HStack className="items-center justify-between flex-1">
+                        <ButtonText>{column.title}</ButtonText>
+                        <Text size="xs" className="text-typography-500">
+                          {count}
+                        </Text>
+                      </HStack>
+                    </Button>
+                  );
+                })}
+              </VStack>
+              <HStack className="justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onPress={() => setMoveTarget(null)}
+                >
+                  <ButtonText>Cancelar</ButtonText>
+                </Button>
+              </HStack>
+            </VStack>
+          </Box>
+        </Box>
+      </Modal>
 
       <ColumnFormModal
         visible={!!editingColumn}
-        title="Editar coluna"
+        title="Editar linha"
         initialTitle={editingColumn?.title}
         onClose={() => setEditingColumn(null)}
         onConfirm={async (title) => {

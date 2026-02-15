@@ -1,3 +1,5 @@
+import "react-native-gesture-handler";
+
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import "@/global.css";
 import { useAuthStore } from "@/src/auth/store/auth.store";
@@ -14,6 +16,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useColorScheme } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -78,19 +81,21 @@ function RootLayoutNav() {
       : (themeMode as "light" | "dark");
 
   return (
-    <GluestackUIProvider mode={resolvedTheme}>
-      <ThemeProvider
-        value={resolvedTheme === "dark" ? DarkTheme : DefaultTheme}
-      >
-        <Stack
-          screenOptions={{
-            headerShown: false,
-          }}
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <GluestackUIProvider mode={resolvedTheme}>
+        <ThemeProvider
+          value={resolvedTheme === "dark" ? DarkTheme : DefaultTheme}
         >
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(app)" />
-        </Stack>
-      </ThemeProvider>
-    </GluestackUIProvider>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+            }}
+          >
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(app)" />
+          </Stack>
+        </ThemeProvider>
+      </GluestackUIProvider>
+    </GestureHandlerRootView>
   );
 }

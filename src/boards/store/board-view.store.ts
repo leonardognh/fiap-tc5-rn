@@ -14,6 +14,7 @@ type BoardViewState = {
   createColumn: (title: string) => Promise<void>;
   updateColumn: (columnId: string, title: string) => Promise<void>;
   deleteColumn: (columnId: string) => Promise<void>;
+  reorderColumns: (orderedIds: string[]) => Promise<void>;
   createItem: (input: {
     columnId: string;
     title: string;
@@ -135,6 +136,17 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
       await repo.deleteColumn(boardId, columnId);
     } catch (err: any) {
       set({ error: err?.message ?? "Falha ao remover coluna." });
+    }
+  },
+
+  reorderColumns: async (orderedIds) => {
+    const boardId = get().boardId;
+    if (!boardId) return;
+    set({ error: null });
+    try {
+      await repo.reorderColumns(boardId, orderedIds);
+    } catch (err: any) {
+      set({ error: err?.message ?? "Falha ao reordenar linhas." });
     }
   },
 

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable } from "react-native";
 import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";
@@ -45,7 +45,7 @@ export function ColumnFormModal({
 
             <Input className="border-outline-300 rounded-xl">
               <InputField
-                placeholder="Título da coluna"
+                placeholder="T�tulo da linha"
                 value={value}
                 onChangeText={setValue}
                 maxLength={60}
@@ -71,3 +71,4 @@ export function ColumnFormModal({
     </Modal>
   );
 }
+

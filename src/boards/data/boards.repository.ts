@@ -231,6 +231,19 @@ export async function updateColumn(
   });
 }
 
+export async function reorderColumns(boardId: string, columnIds: string[]) {
+  if (!boardId) throw new Error("Board inválido.");
+  const base = Date.now();
+  const batch = writeBatch(firebaseDb);
+  columnIds.forEach((columnId, index) => {
+    batch.update(doc(firebaseDb, "boards", boardId, "columns", columnId), {
+      order: base + index,
+      updatedAt: base,
+    });
+  });
+  await batch.commit();
+}
+
 export async function deleteColumn(boardId: string, columnId: string) {
   const batch = writeBatch(firebaseDb);
   const itemsRef = collection(firebaseDb, "boards", boardId, "items");
