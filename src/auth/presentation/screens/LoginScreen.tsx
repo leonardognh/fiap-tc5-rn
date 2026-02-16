@@ -5,15 +5,16 @@ import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
 import { Input, InputField, InputIcon, InputSlot } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
+import { Toast, ToastDescription, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { router } from "expo-router";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react-native";
-import React, { useMemo, useState } from "react";
-import { Alert } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
 import { useAuthStore } from "../../store/auth.store";
 
 export function LoginScreen() {
   const { login, loading, error, clearError } = useAuthStore();
+  const toast = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -31,9 +32,20 @@ export function LoginScreen() {
     }
   };
 
-  if (error) {
-    Alert.alert("Erro", error, [{ text: "OK", onPress: clearError }]);
-  }
+  useEffect(() => {
+    if (!error) return;
+    toast.show({
+      placement: "top",
+      duration: 3000,
+      render: ({ id }) => (
+        <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+          <ToastTitle>Não foi possível fazer o login</ToastTitle>
+          <ToastDescription>{error}</ToastDescription>
+        </Toast>
+      ),
+    });
+    clearError();
+  }, [error, toast, clearError]);
 
   return (
     <Box className="flex-1 bg-background-0 p-6 justify-center">
