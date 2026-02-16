@@ -7,7 +7,7 @@ import { Input, InputField, InputIcon, InputSlot } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import { router } from "expo-router";
-import { Lock, Mail } from "lucide-react-native";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react-native";
 import React, { useMemo, useState } from "react";
 import { Alert } from "react-native";
 import { useAuthStore } from "../../store/auth.store";
@@ -16,6 +16,7 @@ export function LoginScreen() {
   const { login, loading, error, clearError } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const canSubmit = useMemo(
     () => email.trim().length >= 4 && password.length >= 6 && !loading,
@@ -94,8 +95,17 @@ export function LoginScreen() {
                 placeholder="Sua senha"
                 value={password}
                 onChangeText={setPassword}
-                secureTextEntry
+                secureTextEntry={!showPassword}
               />
+              <InputSlot
+                className="pr-3"
+                onPress={() => setShowPassword((value) => !value)}
+                accessibilityLabel={
+                  showPassword ? "Ocultar senha" : "Mostrar senha"
+                }
+              >
+                <InputIcon as={showPassword ? EyeOff : Eye} />
+              </InputSlot>
             </Input>
           </VStack>
         </VStack>

@@ -13,7 +13,7 @@ import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 
 // Icons
-import { Lock, Mail, User } from "lucide-react-native";
+import { Eye, EyeOff, Lock, Mail, User } from "lucide-react-native";
 
 // Store
 import { useAuthStore } from "../../store/auth.store";
@@ -24,18 +24,34 @@ export function RegisterScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const passwordsMatch =
+    password.length > 0 &&
+    confirmPassword.length > 0 &&
+    password === confirmPassword;
+  const showPasswordMismatch =
+    confirmPassword.length > 0 && password !== confirmPassword;
 
   const canSubmit = useMemo(
     () =>
       name.trim().length >= 2 &&
       email.trim().length >= 4 &&
       password.length >= 6 &&
+      confirmPassword.length >= 6 &&
+      password === confirmPassword &&
       !loading,
-    [name, email, password, loading],
+    [name, email, password, confirmPassword, loading],
   );
 
   const onSubmit = async () => {
     try {
+      if (!passwordsMatch) {
+        Alert.alert("Ops", "As senhas não conferem.", [{ text: "OK" }]);
+        return;
+      }
       await register(name, email, password);
       router.replace("/(app)/(tabs)");
     } catch (e) {
@@ -111,7 +127,9 @@ export function RegisterScreen() {
             </Text>
             <Input
               size="md"
-              className="border-outline-300 rounded-xl bg-transparent"
+              className={`rounded-xl bg-transparent ${
+                showPasswordMismatch ? "border-error-500" : "border-outline-300"
+              }`}
             >
               <InputSlot className="pl-3">
                 <InputIcon as={Lock} className="text-typography-500" />
@@ -120,9 +138,57 @@ export function RegisterScreen() {
                 placeholder="Mínimo 6 caracteres"
                 value={password}
                 onChangeText={setPassword}
-                secureTextEntry
+                secureTextEntry={!showPassword}
               />
+              <InputSlot
+                className="pr-3"
+                onPress={() => setShowPassword((value) => !value)}
+                accessibilityLabel={
+                  showPassword ? "Ocultar senha" : "Mostrar senha"
+                }
+              >
+                <InputIcon as={showPassword ? EyeOff : Eye} />
+              </InputSlot>
             </Input>
+          </VStack>
+
+          {/* Campo de Confirmar Senha */}
+          <VStack space="xs">
+            <Text size="sm" bold className="text-typography-700 ml-1">
+              Confirmar senha
+            </Text>
+            <Input
+              size="md"
+              className={`rounded-xl bg-transparent ${
+                showPasswordMismatch ? "border-error-500" : "border-outline-300"
+              }`}
+            >
+              <InputSlot className="pl-3">
+                <InputIcon as={Lock} className="text-typography-500" />
+              </InputSlot>
+              <InputField
+                placeholder="Repita sua senha"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirmPassword}
+              />
+              <InputSlot
+                className="pr-3"
+                onPress={() =>
+                  setShowConfirmPassword((value) => !value)
+                }
+                accessibilityLabel={
+                  showConfirmPassword ? "Ocultar senha" : "Mostrar senha"
+                }
+              >
+                <InputIcon as={showConfirmPassword ? EyeOff : Eye} />
+              </InputSlot>
+            </Input>
+            {showPasswordMismatch ? (
+              <Text size="xs" className="text-error-600 ml-1">
+                As senhas nao conferem.
+              </Text>
+            ) : null}
           </VStack>
         </VStack>
 
