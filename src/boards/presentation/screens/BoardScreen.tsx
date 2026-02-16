@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronUp,
+  LogOut,
   MoreVertical,
   Plus,
   Pencil,
@@ -23,7 +24,10 @@ import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
 import { Input, InputField } from "@/components/ui/input";
 import { ConfirmModal } from "@/components/modals/ConfirmModal";
 import { useToast, Toast, ToastDescription, ToastTitle } from "@/components/ui/toast";
+import Colors from "@/constants/Colors";
+import { useColorScheme } from "@/components/useColorScheme";
 
+import { useAuthStore } from "@/src/auth/store/auth.store";
 import { useSettingsStore } from "@/src/settings/store/settings.store";
 import { useBoardViewStore } from "../../store/board-view.store";
 import type { BoardColumn, BoardItem } from "../../types/boards";
@@ -51,6 +55,8 @@ export function BoardScreen() {
     ? params.boardId[0]
     : params.boardId;
   const navigation = useNavigation();
+  const colorScheme = useColorScheme();
+  const iconColor = Colors[colorScheme ?? "light"].text;
   const {
     board,
     columns,
@@ -70,6 +76,7 @@ export function BoardScreen() {
     updatePomodoro,
   } = useBoardViewStore();
 
+  const logout = useAuthStore((s) => s.logout);
   const preferences = useSettingsStore((s) => s.preferences);
   const toast = useToast();
   const [newColumnTitle, setNewColumnTitle] = useState("");
@@ -112,6 +119,14 @@ export function BoardScreen() {
   const itemsRef = useRef<BoardItem[]>([]);
   const movedByCycleRef = useRef<Map<number, string[]>>(new Map());
 
+  const handleLogout = useCallback(async () => {
+    try {
+      await logout();
+    } catch {
+      // Erro tratado no store
+    }
+  }, [logout]);
+
   useEffect(() => {
     if (!boardId) return;
     return connect(boardId);
@@ -143,9 +158,36 @@ export function BoardScreen() {
           </Box>
         </HStack>
       ),
-      headerLeft: () => null,
+      headerLeft: () => (
+        <Button
+          size="xs"
+          variant="link"
+          className="p-0"
+          onPress={() => router.back()}
+          accessibilityLabel="Voltar"
+        >
+          <ButtonIcon as={ChevronLeft} />
+        </Button>
+      ),
+      headerRight: () => (
+        <Pressable
+          onPress={handleLogout}
+          hitSlop={8}
+          accessibilityLabel="Sair"
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: 999,
+            padding: 8,
+            borderWidth: 1,
+            borderColor: iconColor,
+            marginRight: 12,
+          }}
+        >
+          <LogOut size={18} color="#000" />
+        </Pressable>
+      ),
     });
-  }, [navigation, board?.title]);
+  }, [navigation, board?.title, board?.status, handleLogout, iconColor]);
 
   const readOnly = board?.status === "archived";
   const animationsEnabled = preferences.animations ?? true;
@@ -442,7 +484,7 @@ export function BoardScreen() {
       onConfirm: () => deleteItem(item.id),
     });
   };
-const handleAddColumn = async () => {
+  const handleAddColumn = async () => {
     if (!newColumnTitle.trim()) return;
     await createColumn(newColumnTitle);
     setNewColumnTitle("");
@@ -469,14 +511,6 @@ const handleAddColumn = async () => {
         ) : null}
 
         <HStack space="sm" className="items-center">
-          <Button
-            size="xs"
-            variant="outline"
-            onPress={() => router.back()}
-            accessibilityLabel="Voltar"
-          >
-            <ButtonIcon as={ChevronLeft} />
-          </Button>
           <Input className="border-outline-300 rounded-xl flex-1">
             <InputField
               placeholder="Nova classificação"
