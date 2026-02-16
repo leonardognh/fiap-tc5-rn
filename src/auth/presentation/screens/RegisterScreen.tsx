@@ -186,7 +186,7 @@ export function RegisterScreen() {
             </Input>
             {showPasswordMismatch ? (
               <Text size="xs" className="text-error-600 ml-1">
-                As senhas nao conferem.
+                As senhas não conferem.
               </Text>
             ) : null}
           </VStack>

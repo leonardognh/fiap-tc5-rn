@@ -1,7 +1,7 @@
-import { Eye, EyeOff } from "lucide-react-native";
+import { Eye, EyeOff, Pencil } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Image, Pressable, ScrollView, useWindowDimensions } from "react-native";
+import { Alert, Image, Modal, Pressable, ScrollView, useWindowDimensions } from "react-native";
 
 import { Box } from "@/components/ui/box";
 import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
@@ -57,6 +57,7 @@ export function SettingsScreen() {
   const [draftPhoto, setDraftPhoto] = useState("");
   const [draftPassword, setDraftPassword] = useState("");
   const [draftConfirm, setDraftConfirm] = useState("");
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [focusHelpOpen, setFocusHelpOpen] = useState(false);
@@ -88,11 +89,34 @@ export function SettingsScreen() {
   const passwordMismatch =
     !!draftPassword && !!draftConfirm && draftPassword !== draftConfirm;
 
+  const canSavePassword =
+    draftPassword.length >= 6 &&
+    draftConfirm.length >= 6 &&
+    !passwordMismatch;
+
   const canSaveProfile = useMemo(() => {
     if (!isEditing) return false;
     if (passwordMismatch) return false;
     return true;
   }, [isEditing, passwordMismatch]);
+
+  const handleStartEdit = () => {
+    setIsEditing(true);
+    setPasswordModalOpen(false);
+    setDraftPassword("");
+    setDraftConfirm("");
+    setShowPassword(false);
+    setShowConfirm(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setPasswordModalOpen(false);
+    setDraftPassword("");
+    setDraftConfirm("");
+    setShowPassword(false);
+    setShowConfirm(false);
+  };
 
   const handleSaveProfile = async () => {
     if (!canSaveProfile) return;
@@ -105,8 +129,25 @@ export function SettingsScreen() {
     setDraftPassword("");
     setDraftConfirm("");
     setIsEditing(false);
+    setPasswordModalOpen(false);
     setShowPassword(false);
     setShowConfirm(false);
+  };
+
+  const closePasswordModal = () => {
+    setPasswordModalOpen(false);
+    setDraftPassword("");
+    setDraftConfirm("");
+    setShowPassword(false);
+    setShowConfirm(false);
+  };
+
+  const handleSavePassword = async () => {
+    if (!canSavePassword) return;
+    await updateProfile({
+      password: draftPassword,
+    });
+    closePasswordModal();
   };
 
   const setTheme = (mode: ThemeMode) => updatePreferences({ theme: mode });
@@ -241,20 +282,14 @@ export function SettingsScreen() {
               {!isEditing ? (
                 <Button
                   size="sm"
-                  variant="outline"
-                  onPress={() => setIsEditing(true)}
+                  variant="link"
+                  onPress={handleStartEdit}
+                  className="p-0"
+                  accessibilityLabel={t("settings.edit")}
                 >
-                  <ButtonText>{t("settings.edit")}</ButtonText>
+                  <ButtonIcon as={Pencil} />
                 </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onPress={() => setIsEditing(false)}
-                >
-                  <ButtonText>{t("settings.cancel")}</ButtonText>
-                </Button>
-              )}
+              ) : null}
             </HStack>
 
             {isEditing ? (
@@ -283,52 +318,23 @@ export function SettingsScreen() {
                   />
                 </Input>
 
-                <Text size="sm" className="text-typography-600 mt-2">
-                  {t("settings.change_password")}
-                </Text>
-                <HStack className="items-center">
-                  <Input className="border-outline-300 rounded-xl flex-1">
-                    <InputField
-                      placeholder={t("settings.new_password")}
-                      secureTextEntry={!showPassword}
-                      value={draftPassword}
-                      onChangeText={setDraftPassword}
-                    />
-                  </Input>
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    className="ml-2"
-                    onPress={() => setShowPassword((v) => !v)}
-                  >
-                    <ButtonIcon as={showPassword ? EyeOff : Eye} />
-                  </Button>
-                </HStack>
-                <HStack className="items-center">
-                  <Input className="border-outline-300 rounded-xl flex-1">
-                    <InputField
-                      placeholder={t("settings.confirm_password")}
-                      secureTextEntry={!showConfirm}
-                      value={draftConfirm}
-                      onChangeText={setDraftConfirm}
-                    />
-                  </Input>
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    className="ml-2"
-                    onPress={() => setShowConfirm((v) => !v)}
-                  >
-                    <ButtonIcon as={showConfirm ? EyeOff : Eye} />
-                  </Button>
-                </HStack>
-                {passwordMismatch ? (
-                  <Text size="xs" className="text-error-600">
-                    {t("settings.password_mismatch")}
-                  </Text>
-                ) : null}
+                <Button
+                  size="xs"
+                  variant="outline"
+                  className="self-start"
+                  onPress={() => setPasswordModalOpen(true)}
+                >
+                  <ButtonText>{t("settings.change_password_action")}</ButtonText>
+                </Button>
 
-                <HStack className="justify-end">
+                <HStack space="sm" className="justify-end">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onPress={handleCancelEdit}
+                  >
+                    <ButtonText>{t("settings.cancel")}</ButtonText>
+                  </Button>
                   <Button
                     size="sm"
                     onPress={handleSaveProfile}
@@ -343,6 +349,86 @@ export function SettingsScreen() {
               </VStack>
             ) : null}
           </Section>
+
+          <Modal visible={passwordModalOpen} transparent animationType="fade">
+            <Box className="flex-1 items-center justify-center bg-black/50 px-4">
+              <Pressable
+                className="absolute inset-0"
+                onPress={closePasswordModal}
+              />
+              <Box className="w-full max-w-[420px] rounded-2xl bg-background-0 p-5">
+                <VStack space="md">
+                  <Text size="lg" className="text-typography-900 font-semibold">
+                    {t("settings.change_password_action")}
+                  </Text>
+
+                  <HStack className="items-center">
+                    <Input className="border-outline-300 rounded-xl flex-1">
+                      <InputField
+                        placeholder={t("settings.new_password")}
+                        secureTextEntry={!showPassword}
+                        value={draftPassword}
+                        onChangeText={setDraftPassword}
+                      />
+                    </Input>
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      className="ml-2"
+                      onPress={() => setShowPassword((v) => !v)}
+                    >
+                      <ButtonIcon as={showPassword ? EyeOff : Eye} />
+                    </Button>
+                  </HStack>
+
+                  <HStack className="items-center">
+                    <Input className="border-outline-300 rounded-xl flex-1">
+                      <InputField
+                        placeholder={t("settings.confirm_password")}
+                        secureTextEntry={!showConfirm}
+                        value={draftConfirm}
+                        onChangeText={setDraftConfirm}
+                      />
+                    </Input>
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      className="ml-2"
+                      onPress={() => setShowConfirm((v) => !v)}
+                    >
+                      <ButtonIcon as={showConfirm ? EyeOff : Eye} />
+                    </Button>
+                  </HStack>
+
+                  {passwordMismatch ? (
+                    <Text size="xs" className="text-error-600">
+                      {t("settings.password_mismatch")}
+                    </Text>
+                  ) : null}
+
+                  <HStack space="sm" className="justify-end">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onPress={closePasswordModal}
+                    >
+                      <ButtonText>{t("settings.cancel")}</ButtonText>
+                    </Button>
+                    <Button
+                      size="sm"
+                      onPress={handleSavePassword}
+                      isDisabled={!canSavePassword}
+                      className={
+                        !canSavePassword ? "bg-background-300" : undefined
+                      }
+                    >
+                      <ButtonText>{t("settings.save")}</ButtonText>
+                    </Button>
+                  </HStack>
+                </VStack>
+              </Box>
+            </Box>
+          </Modal>
 
           <Box
             className={`relative overflow-visible ${focusHelpOpen ? "z-50" : "z-0"}`}
