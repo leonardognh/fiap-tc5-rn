@@ -307,3 +307,22 @@ export const config = {
     '--color-indicator-error': '232 70 69',
   }),
 };
+
+export const highContrastConfig = {
+  light: vars({
+    '--color-outline-200': '140 140 140',
+    '--color-outline-300': '90 90 90',
+    '--color-outline-400': '60 60 60',
+    '--color-typography-500': '80 80 80',
+    '--color-typography-600': '50 50 50',
+    '--color-indicator-primary': '0 0 0',
+  }),
+  dark: vars({
+    '--color-outline-200': '210 210 210',
+    '--color-outline-300': '225 225 225',
+    '--color-outline-400': '245 245 245',
+    '--color-typography-500': '230 230 230',
+    '--color-typography-600': '245 245 245',
+    '--color-indicator-primary': '255 255 255',
+  }),
+};

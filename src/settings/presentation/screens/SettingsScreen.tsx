@@ -116,6 +116,10 @@ export function SettingsScreen() {
     i18n.changeLanguage(language);
   };
 
+  const setContrast = (enabled: boolean) => {
+    updatePreferences({ contrast: enabled ? "high" : "normal" });
+  };
+
   const focusModeEnabled = preferences.focusMode ?? false;
 
   const setAnimations = (enabled: boolean) => {
@@ -136,6 +140,7 @@ export function SettingsScreen() {
       updatePreferences({
         focusMode: true,
         animations: false,
+        contrast: "normal",
         pomodoroPause: false,
         fontScale: 1,
         spaceScale: 1,
@@ -172,6 +177,7 @@ export function SettingsScreen() {
     if (!focusModeEnabled) return;
     if (
       preferences.animations ||
+      preferences.contrast === "high" ||
       (preferences.fontScale ?? 1) !== 1 ||
       (preferences.spaceScale ?? 1) !== 1 ||
       preferences.cognitiveAlerts?.transitionScreen ||
@@ -179,6 +185,7 @@ export function SettingsScreen() {
     ) {
       updatePreferences({
         animations: false,
+        contrast: "normal",
         fontScale: 1,
         spaceScale: 1,
         pomodoroPause: false,
@@ -192,6 +199,7 @@ export function SettingsScreen() {
   }, [
     focusModeEnabled,
     preferences.animations,
+    preferences.contrast,
     preferences.fontScale,
     preferences.spaceScale,
     preferences.cognitiveAlerts,
@@ -477,14 +485,27 @@ export function SettingsScreen() {
             </VStack>
 
             <VStack space="xs">
-                        <Text size="sm" className="text-typography-600">
-                          {t("settings.animations")}
-                        </Text>
-                        <Switch
-                          value={focusModeEnabled ? false : preferences.animations}
-                          onValueChange={setAnimations}
-                          disabled={focusModeEnabled}
-                        />
+              <Text size="sm" className="text-typography-600">
+                {t("settings.animations")}
+              </Text>
+              <Switch
+                value={focusModeEnabled ? false : preferences.animations}
+                onValueChange={setAnimations}
+                disabled={focusModeEnabled}
+              />
+            </VStack>
+
+            <VStack space="xs">
+              <Text size="sm" className="text-typography-600">
+                {t("settings.high_contrast")}
+              </Text>
+              <Switch
+                value={
+                  focusModeEnabled ? false : preferences.contrast === "high"
+                }
+                onValueChange={setContrast}
+                disabled={focusModeEnabled}
+              />
             </VStack>
 
             <VStack space="xs">

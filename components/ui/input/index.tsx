@@ -10,6 +10,7 @@ import {
 import { cssInterop } from 'nativewind';
 import type { VariantProps } from '@gluestack-ui/utils/nativewind-utils';
 import { PrimitiveIcon, UIIcon } from '@gluestack-ui/core/icon/creator';
+import { useSettingsStore } from '@/src/settings/store/settings.store';
 
 const SCOPE = 'INPUT';
 
@@ -108,11 +109,20 @@ const Input = React.forwardRef<React.ComponentRef<typeof UIInput>, IInputProps>(
     { className, variant = 'outline', size = 'md', ...props },
     ref
   ) {
+    const contrast = useSettingsStore((s) => s.preferences.contrast);
+    const contrastClass =
+      contrast === 'high'
+        ? 'border-2 border-outline-400 data-[focus=true]:border-outline-400 data-[hover=true]:border-outline-400'
+        : '';
     return (
       <UIInput
         ref={ref}
         {...props}
-        className={inputStyle({ variant, size, class: className })}
+        className={inputStyle({
+          variant,
+          size,
+          class: [className, contrastClass].filter(Boolean).join(' '),
+        })}
         context={{ variant, size }}
       />
     );

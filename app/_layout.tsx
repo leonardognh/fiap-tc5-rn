@@ -79,10 +79,11 @@ function RootLayoutNav() {
     themeMode === "system"
       ? (colorScheme as "light" | "dark") || "light"
       : (themeMode as "light" | "dark");
+  const contrastMode = preferences?.contrast ?? "normal";
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <GluestackUIProvider mode={resolvedTheme}>
+      <GluestackUIProvider mode={resolvedTheme} contrast={contrastMode}>
         <ThemeProvider
           value={resolvedTheme === "dark" ? DarkTheme : DefaultTheme}
         >

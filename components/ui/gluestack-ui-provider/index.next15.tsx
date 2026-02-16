@@ -1,7 +1,7 @@
 // This is a Next.js 15 compatible version of the GluestackUIProvider
 'use client';
 import React, { useEffect, useLayoutEffect } from 'react';
-import { config } from './config';
+import { config, highContrastConfig } from './config';
 import { OverlayProvider } from '@gluestack-ui/core/overlay/creator';
 import { ToastProvider } from '@gluestack-ui/core/toast/creator';
 import { setFlushStyles } from '@gluestack-ui/utils/nativewind-utils';
@@ -20,11 +20,34 @@ export const useSafeLayoutEffect =
 
 export function GluestackUIProvider({
   mode = 'light',
+  contrast = 'normal',
   ...props
 }: {
   mode?: 'light' | 'dark' | 'system';
+  contrast?: 'normal' | 'high';
   children?: React.ReactNode;
 }) {
+  const applyContrast = React.useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const documentElement = document.documentElement;
+    if (!documentElement) return;
+
+    const keys = Object.keys(highContrastConfig.light);
+    keys.forEach((key) => documentElement.style.removeProperty(key));
+
+    if (contrast !== 'high') {
+      documentElement.dataset['contrast'] = 'normal';
+      return;
+    }
+
+    const isDark = documentElement.classList.contains('dark');
+    const vars = highContrastConfig[isDark ? 'dark' : 'light'];
+    Object.entries(vars).forEach(([key, value]) => {
+      documentElement.style.setProperty(key, String(value));
+    });
+    documentElement.dataset['contrast'] = 'high';
+  }, [contrast]);
+
   let cssVariablesWithMode = ``;
   Object.keys(config).forEach((configKey) => {
     cssVariablesWithMode +=
@@ -40,9 +63,13 @@ export function GluestackUIProvider({
 
   setFlushStyles(cssVariablesWithMode);
 
-  const handleMediaQuery = React.useCallback((e: MediaQueryListEvent) => {
-    script(e.matches ? 'dark' : 'light');
-  }, []);
+  const handleMediaQuery = React.useCallback(
+    (e: MediaQueryListEvent) => {
+      script(e.matches ? 'dark' : 'light');
+      applyContrast();
+    },
+    [applyContrast]
+  );
 
   useSafeLayoutEffect(() => {
     if (mode !== 'system') {
@@ -51,18 +78,20 @@ export function GluestackUIProvider({
         documentElement.classList.add(mode);
         documentElement.classList.remove(mode === 'light' ? 'dark' : 'light');
         documentElement.style.colorScheme = mode;
+        applyContrast();
       }
     }
-  }, [mode]);
+  }, [mode, applyContrast]);
 
   useSafeLayoutEffect(() => {
     if (mode !== 'system') return;
     const media = window.matchMedia('(prefers-color-scheme: dark)');
 
     media.addListener(handleMediaQuery);
+    applyContrast();
 
     return () => media.removeListener(handleMediaQuery);
-  }, [handleMediaQuery]);
+  }, [handleMediaQuery, applyContrast, mode]);
 
   useSafeLayoutEffect(() => {
     if (typeof window !== 'undefined') {

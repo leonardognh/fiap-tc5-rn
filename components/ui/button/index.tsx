@@ -10,6 +10,7 @@ import {
 import { cssInterop } from 'nativewind';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { PrimitiveIcon, UIIcon } from '@gluestack-ui/core/icon/creator';
+import { useSettingsStore } from '@/src/settings/store/settings.store';
 
 const SCOPE = 'BUTTON';
 
@@ -292,11 +293,19 @@ const Button = React.forwardRef<
     { className, variant = 'solid', size = 'md', action = 'primary', ...props },
     ref
   ) => {
+    const contrast = useSettingsStore((s) => s.preferences.contrast);
+    const contrastClass =
+      contrast === 'high' && variant !== 'link' ? 'border-2' : '';
     return (
       <UIButton
         ref={ref}
         {...props}
-        className={buttonStyle({ variant, size, action, class: className })}
+        className={buttonStyle({
+          variant,
+          size,
+          action,
+          class: [className, contrastClass].filter(Boolean).join(' '),
+        })}
         context={{ variant, size, action }}
       />
     );
