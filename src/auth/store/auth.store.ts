@@ -9,6 +9,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { firebaseAuth } from "@/src/infrastructure/firebase/firebase.client";
+import { upsertUserProfileDoc } from "@/src/settings/data/settings.repository";
 
 type AuthState = {
   user: User | null;
@@ -69,7 +70,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   login: async (email, password) => {
     set({ loading: true, error: null });
     try {
-      await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
+      const cred = await signInWithEmailAndPassword(
+        firebaseAuth,
+        email.trim(),
+        password,
+      );
+      try {
+        await upsertUserProfileDoc(cred.user.uid, {
+          displayName: cred.user.displayName ?? "Sem nome",
+          email: cred.user.email ?? email.trim(),
+          photoURL: cred.user.photoURL ?? undefined,
+        });
+      } catch {
+
+      }
     } catch (e) {
       set({ error: normalizeAuthError(e) });
       throw e;
@@ -88,6 +102,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       );
       const displayName = name.trim();
       if (displayName) await updateProfile(cred.user, { displayName });
+      try {
+        await upsertUserProfileDoc(cred.user.uid, {
+          displayName: displayName || "Sem nome",
+          email: cred.user.email ?? email.trim(),
+          photoURL: cred.user.photoURL ?? undefined,
+        });
+      } catch {
+
+      }
     } catch (e) {
       set({ error: normalizeAuthError(e) });
       throw e;

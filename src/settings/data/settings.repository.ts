@@ -77,7 +77,10 @@ export async function updateUserProfileDoc(
   patch: UserProfilePatch,
 ) {
   const ref = doc(firebaseDb, "users", userId);
-  await updateDoc(ref, { ...patch, updatedAt: Date.now() });
+  const cleanPatch = Object.fromEntries(
+    Object.entries(patch).filter(([, value]) => value !== undefined),
+  );
+  await updateDoc(ref, { ...cleanPatch, updatedAt: Date.now() });
 }
 
 export async function upsertUserProfileDoc(
@@ -85,7 +88,10 @@ export async function upsertUserProfileDoc(
   patch: UserProfilePatch,
 ) {
   const ref = doc(firebaseDb, "users", userId);
-  await setDoc(ref, { ...patch, updatedAt: Date.now() }, { merge: true });
+  const cleanPatch = Object.fromEntries(
+    Object.entries(patch).filter(([, value]) => value !== undefined),
+  );
+  await setDoc(ref, { ...cleanPatch, updatedAt: Date.now() }, { merge: true });
 }
 
 export async function updateUserPreferencesDoc(
