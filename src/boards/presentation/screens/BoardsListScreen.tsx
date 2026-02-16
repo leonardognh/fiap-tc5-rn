@@ -178,7 +178,7 @@ export function BoardsListScreen() {
               <Text className="text-typography-600">
                 {query.status === "archived"
                   ? "Nenhum board arquivado."
-                  : "Nenhum board encontrado. Crie o primeiro para começar."}
+                  : "Nenhum board encontrado. Crie o primeiro para comeÃ§ar."}
               </Text>
             </Box>
           ) : null}
