@@ -6,6 +6,7 @@
   getDocs,
   onSnapshot,
   query,
+  serverTimestamp,
   updateDoc,
   where,
   writeBatch,
@@ -165,23 +166,41 @@ export async function createBoard(input: {
   const title = input.title.trim();
   if (!title) throw new Error("Título do board é obrigatório.");
 
-  const now = Date.now();
+  const now = serverTimestamp();
   const createdBy = input.createdBy;
 
   const members = Array.from(
     new Set([createdBy, ...(input.members ?? [])].filter(Boolean)),
   );
 
-  await addDoc(collection(firebaseDb, "boards"), {
+  const description = input.description?.trim();
+
+  const payload: Record<string, any> = {
     title,
-    description: input.description?.trim() ?? "",
     title_lc: normalizeText(title),
     createdBy,
     members,
     status: "active",
+    tagIds: [],
+    tags_lc: [],
+    pomodoro: {
+      enabled: false,
+      workSeconds: null,
+      restSeconds: null,
+      moveOnPauseColumnId: null,
+      moveOnResumeColumnId: null,
+      moveOnCompleteColumnId: null,
+      applyOnColumnId: null,
+    },
     createdAt: now,
     updatedAt: now,
-  });
+  };
+
+  if (description) {
+    payload.description = description;
+  }
+
+  await addDoc(collection(firebaseDb, "boards"), payload);
 }
 
 export async function updateBoard(
@@ -191,7 +210,7 @@ export async function updateBoard(
   if (!boardId) throw new Error("Board inválido.");
 
   const payload: Record<string, any> = {
-    updatedAt: Date.now(),
+    updatedAt: serverTimestamp(),
   };
 
   if (typeof patch.title === "string") {
@@ -202,7 +221,10 @@ export async function updateBoard(
   }
 
   if ("description" in patch) {
-    payload.description = patch.description?.trim() ?? "";
+    const description = patch.description?.trim();
+    if (description) {
+      payload.description = description;
+    }
   }
 
   await updateDoc(doc(firebaseDb, "boards", boardId), payload);
@@ -232,7 +254,7 @@ export async function updateBoardPomodoro(input: {
         moveOnCompleteColumnId: null,
         applyOnColumnId: null,
       },
-      updatedAt: Date.now(),
+      updatedAt: serverTimestamp(),
     });
     return;
   }
@@ -263,7 +285,7 @@ export async function updateBoardPomodoro(input: {
       moveOnCompleteColumnId: input.moveOnCompleteColumnId ?? null,
       applyOnColumnId: input.applyOnColumnId ?? null,
     },
-    updatedAt: Date.now(),
+    updatedAt: serverTimestamp(),
   });
 }
 
@@ -274,7 +296,7 @@ export async function setBoardStatus(
   if (!boardId) throw new Error("Board inválido.");
   await updateDoc(doc(firebaseDb, "boards", boardId), {
     status,
-    updatedAt: Date.now(),
+    updatedAt: serverTimestamp(),
   });
 }
 

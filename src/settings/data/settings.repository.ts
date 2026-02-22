@@ -1,6 +1,8 @@
 ﻿import {
   doc,
+  getDoc,
   onSnapshot,
+  serverTimestamp,
   setDoc,
   updateDoc,
 } from "firebase/firestore";
@@ -80,18 +82,42 @@ export async function updateUserProfileDoc(
   const cleanPatch = Object.fromEntries(
     Object.entries(patch).filter(([, value]) => value !== undefined),
   );
-  await updateDoc(ref, { ...cleanPatch, updatedAt: Date.now() });
+  const payload = { ...cleanPatch, updatedAt: Date.now() };
+  try {
+    await updateDoc(ref, payload);
+  } catch {
+    await setDoc(ref, payload, { merge: true });
+  }
+}
+
+export async function ensureUserDoc(
+  userId: string,
+  input: { email?: string | null; displayName?: string | null; photoURL?: string | null },
+) {
+  const ref = doc(firebaseDb, "users", userId);
+  const snap = await getDoc(ref);
+  if (snap.exists()) return;
+
+  const email = (input.email ?? "").trim();
+  await setDoc(
+    ref,
+    {
+      email: email || null,
+      email_lc: email ? email.toLowerCase() : null,
+      displayName: input.displayName ?? null,
+      photoURL: input.photoURL ?? null,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
 }
 
 export async function upsertUserProfileDoc(
   userId: string,
   patch: UserProfilePatch,
 ) {
-  const ref = doc(firebaseDb, "users", userId);
-  const cleanPatch = Object.fromEntries(
-    Object.entries(patch).filter(([, value]) => value !== undefined),
-  );
-  await setDoc(ref, { ...cleanPatch, updatedAt: Date.now() }, { merge: true });
+  await updateUserProfileDoc(userId, patch);
 }
 
 export async function updateUserPreferencesDoc(

@@ -141,9 +141,6 @@ export function BoardScreen() {
   }, [items]);
 
   useLayoutEffect(() => {
-    const isArchived = board?.status === "archived";
-    const statusLabel = isArchived ? "Arquivado" : "Ativo";
-    const statusClass = isArchived ? "bg-background-200" : "bg-success-100";
     navigation.setOptions({
       headerTitleAlign: "left",
       headerTitle: () => (
@@ -151,11 +148,6 @@ export function BoardScreen() {
           <Text size="sm" className="text-typography-900 font-semibold">
             {board?.title ?? "Board"}
           </Text>
-          <Box className={`rounded-full px-3 py-1 ${statusClass}`}>
-            <Text size="xs" className="text-typography-700">
-              {statusLabel}
-            </Text>
-          </Box>
         </HStack>
       ),
       headerLeft: () => (

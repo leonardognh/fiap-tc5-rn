@@ -142,7 +142,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         ...("email" in patch ? { email: patch.email || undefined } : {}),
       };
 
-      await repo.upsertUserProfileDoc(userId, firestorePatch);
+      await repo.updateUserProfileDoc(userId, firestorePatch);
     } catch (err: any) {
       const code = String(err?.code ?? "");
       if (code === "auth/requires-recent-login") {

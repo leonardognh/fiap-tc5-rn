@@ -9,7 +9,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { firebaseAuth } from "@/src/infrastructure/firebase/firebase.client";
-import { upsertUserProfileDoc } from "@/src/settings/data/settings.repository";
+import { ensureUserDoc } from "@/src/settings/data/settings.repository";
 
 type AuthState = {
   user: User | null;
@@ -76,10 +76,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         password,
       );
       try {
-        await upsertUserProfileDoc(cred.user.uid, {
-          displayName: cred.user.displayName ?? "Sem nome",
+        await ensureUserDoc(cred.user.uid, {
+          displayName: cred.user.displayName ?? null,
           email: cred.user.email ?? email.trim(),
-          photoURL: cred.user.photoURL ?? undefined,
+          photoURL: cred.user.photoURL ?? null,
         });
       } catch {
 
@@ -103,10 +103,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const displayName = name.trim();
       if (displayName) await updateProfile(cred.user, { displayName });
       try {
-        await upsertUserProfileDoc(cred.user.uid, {
-          displayName: displayName || "Sem nome",
+        await ensureUserDoc(cred.user.uid, {
+          displayName: displayName || null,
           email: cred.user.email ?? email.trim(),
-          photoURL: cred.user.photoURL ?? undefined,
+          photoURL: cred.user.photoURL ?? null,
         });
       } catch {
 
