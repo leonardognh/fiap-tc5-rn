@@ -158,7 +158,7 @@ export function BoardScreen() {
           onPress={() => router.back()}
           accessibilityLabel="Voltar"
         >
-          <ButtonIcon as={ChevronLeft} />
+          <ButtonIcon as={ChevronLeft} height={30} width={34} />
         </Button>
       ),
       headerRight: () => (
