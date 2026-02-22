@@ -56,10 +56,13 @@ export default function IntroPage() {
         </Button>
 
         <Center>
-          <Text size="xs" className="text-typography-400">
-            Versão 1.0.0
+          <Text size="xs" className="text-typography-400 text-center">
+            © 2026 - Todos os direitos reservados para Hackathon FIAP.
           </Text>
-        </Center>
+          <Text size="xs" className="text-typography-400 text-center">
+            Versão 1.1.2
+          </Text>
+      </Center>
       </VStack>
     </Box>
   );
