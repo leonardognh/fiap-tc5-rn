@@ -180,6 +180,8 @@ export function SettingsScreen() {
     if (enabled) {
       updatePreferences({
         focusMode: true,
+        uiComplexity: "minimum",
+        detailsMode: "summary",
         animations: false,
         contrast: "normal",
         pomodoroPause: false,
@@ -187,6 +189,7 @@ export function SettingsScreen() {
         spaceScale: 1,
         cognitiveAlerts: {
           ...preferences.cognitiveAlerts,
+          enabled: false,
           transitionScreen: false,
           pomodoroPause: false,
         },
@@ -217,14 +220,19 @@ export function SettingsScreen() {
   useEffect(() => {
     if (!focusModeEnabled) return;
     if (
+      preferences.uiComplexity !== "minimum" ||
+      preferences.detailsMode !== "summary" ||
       preferences.animations ||
       preferences.contrast === "high" ||
       (preferences.fontScale ?? 1) !== 1 ||
       (preferences.spaceScale ?? 1) !== 1 ||
+      preferences.cognitiveAlerts?.enabled ||
       preferences.cognitiveAlerts?.transitionScreen ||
       preferences.cognitiveAlerts?.pomodoroPause
     ) {
       updatePreferences({
+        uiComplexity: "minimum",
+        detailsMode: "summary",
         animations: false,
         contrast: "normal",
         fontScale: 1,
@@ -232,6 +240,7 @@ export function SettingsScreen() {
         pomodoroPause: false,
         cognitiveAlerts: {
           ...preferences.cognitiveAlerts,
+          enabled: false,
           transitionScreen: false,
           pomodoroPause: false,
         },
@@ -239,11 +248,14 @@ export function SettingsScreen() {
     }
   }, [
     focusModeEnabled,
+    preferences.uiComplexity,
+    preferences.detailsMode,
     preferences.animations,
     preferences.contrast,
     preferences.fontScale,
     preferences.spaceScale,
     preferences.cognitiveAlerts,
+    preferences.cognitiveAlerts?.enabled,
     preferences.cognitiveAlerts?.transitionScreen,
     preferences.cognitiveAlerts?.pomodoroPause,
     updatePreferences,
