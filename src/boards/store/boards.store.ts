@@ -1,5 +1,5 @@
 ﻿import { create } from "zustand";
-import type { Board, BoardsQuery } from "../types/boards";
+import type { Board, BoardsQuery, Tag } from "../types/boards";
 import * as repo from "../data/boards.repository";
 import { normalizeText } from "../utils/normalize";
 
@@ -13,10 +13,14 @@ type BoardsState = {
   unsubscribe?: () => void;
   subscribe: (userId: string | null) => () => void;
   setQuery: (patch: Partial<BoardsQuery>) => void;
-  createBoard: (input: { title: string; description?: string }) => Promise<void>;
+  createBoard: (input: {
+    title: string;
+    description?: string;
+    tagIds?: string[];
+  }) => Promise<void>;
   updateBoard: (
     id: string,
-    patch: { title?: string; description?: string },
+    patch: { title?: string; description?: string; tagIds?: string[]; tags?: Tag[] },
   ) => Promise<void>;
   archiveBoard: (id: string) => Promise<void>;
   unarchiveBoard: (id: string) => Promise<void>;
@@ -132,6 +136,7 @@ export const useBoardsStore = create<BoardsState>((set, get) => ({
         title: input.title,
         description: input.description,
         createdBy: userId,
+        tagIds: input.tagIds,
       });
     } catch (err: any) {
       set({ error: err?.message ?? "Falha ao criar board.", loading: false });

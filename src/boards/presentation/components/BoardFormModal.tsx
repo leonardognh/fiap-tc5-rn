@@ -7,7 +7,9 @@ import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
 import { Input, InputField } from "@/components/ui/input";
 import { Button, ButtonText } from "@/components/ui/button";
-import type { BoardFormInput } from "../../types/boards";
+import { TagsMultiSelect } from "./TagsMultiSelect";
+import { listTagsByIds } from "../../data/tags.repository";
+import type { BoardFormInput, Tag } from "../../types/boards";
 
 type BoardFormModalProps = {
   visible: boolean;
@@ -30,12 +32,54 @@ export function BoardFormModal({
 }: BoardFormModalProps) {
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible) {
+      setFormTitle("");
+      setFormDescription("");
+      setSelectedTags([]);
+      return;
+    }
     setFormTitle(initial?.title ?? "");
     setFormDescription(initial?.description ?? "");
-  }, [visible, initial?.title, initial?.description]);
+    const initialTags = initial?.tags ?? [];
+    const initialIds = initial?.tagIds ?? [];
+
+    if (initialTags.length > 0) {
+      setSelectedTags(initialTags);
+      return;
+    }
+
+    if (initialIds.length > 0) {
+      let cancelled = false;
+      listTagsByIds(initialIds)
+        .then((tags) => {
+          if (cancelled) return;
+          const tagsMap = new Map(tags.map((tag) => [tag.id, tag]));
+          const filled = initialIds.map(
+            (id) => tagsMap.get(id) ?? { id, name: id },
+          );
+          setSelectedTags(filled);
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setSelectedTags(initialIds.map((id) => ({ id, name: id })));
+          }
+        });
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setSelectedTags([]);
+  }, [
+    visible,
+    initial?.title,
+    initial?.description,
+    initial?.tags,
+    initial?.tagIds,
+  ]);
 
   const canSubmit = useMemo(() => {
     const titleOk = formTitle.trim().length >= 3 && formTitle.trim().length <= 60;
@@ -45,7 +89,12 @@ export function BoardFormModal({
 
   const handleConfirm = () => {
     if (!canSubmit) return;
-    onConfirm({ title: formTitle.trim(), description: formDescription.trim() });
+    onConfirm({
+      title: formTitle.trim(),
+      description: formDescription.trim(),
+      tagIds: selectedTags.map((tag) => tag.id).filter(Boolean),
+      tags: selectedTags,
+    });
   };
 
   return (
@@ -85,6 +134,12 @@ export function BoardFormModal({
                   className="min-h-[120px] py-2 text-typography-900"
                 />
               </Input>
+
+              <TagsMultiSelect
+                value={selectedTags}
+                onChange={setSelectedTags}
+                disabled={!!submitting}
+              />
             </VStack>
 
             <HStack space="sm" className="justify-end">

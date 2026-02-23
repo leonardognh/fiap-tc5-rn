@@ -10,6 +10,13 @@ export type PomodoroConfig = {
   applyOnColumnId?: string | null;
 };
 
+export type Tag = {
+  id: string;
+  name: string;
+  name_lc?: string;
+  color?: string | null;
+};
+
 export type Board = {
   id: string;
   title: string;
@@ -18,6 +25,9 @@ export type Board = {
   members: string[];
   status: BoardStatus;
   pomodoro?: PomodoroConfig;
+  tagIds: string[];
+  tags?: Tag[];
+  tags_lc?: string[];
   createdAt: number;
   updatedAt: number;
 };
@@ -55,6 +65,8 @@ export type BoardsQuery = {
 export type BoardFormInput = {
   title: string;
   description?: string;
+  tagIds?: string[];
+  tags?: Tag[];
 };
 
 export type ColumnFormInput = {

@@ -269,7 +269,27 @@ export function BoardsListScreen() {
                           Atualizado em {new Date(board.updatedAt).toLocaleDateString()}
                         </Text>
 
-                        <HStack space="sm" className="flex-wrap" />
+                        {board.tags && board.tags.length > 0 ? (
+                          <HStack space="xs" className="flex-wrap">
+                            {board.tags.slice(0, 6).map((tag) => (
+                              <Box
+                                key={tag.id}
+                                className="rounded-full border border-outline-200 px-2 py-1"
+                              >
+                                <Text size="xs" className="text-typography-600">
+                                  {tag.name}
+                                </Text>
+                              </Box>
+                            ))}
+                            {board.tags.length > 6 ? (
+                              <Box className="rounded-full border border-outline-200 px-2 py-1">
+                                <Text size="xs" className="text-typography-600">
+                                  +{board.tags.length - 6}
+                                </Text>
+                              </Box>
+                            ) : null}
+                          </HStack>
+                        ) : null}
                       </VStack>
                     </Box>
                   </Pressable>
@@ -364,7 +384,12 @@ export function BoardsListScreen() {
         confirmLabel="Salvar"
         initial={
           editing
-            ? { title: editing.title, description: editing.description }
+            ? {
+                title: editing.title,
+                description: editing.description,
+                tags: editing.tags ?? [],
+                tagIds: editing.tagIds ?? [],
+              }
             : undefined
         }
         onClose={() => setEditing(null)}
@@ -387,7 +412,6 @@ export function BoardsListScreen() {
     </Box>
   );
 }
-
 
 
 

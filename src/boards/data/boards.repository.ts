@@ -19,8 +19,10 @@ import type {
   BoardItem,
   BoardItemPriority,
   BoardStatus,
+  Tag,
 } from "../types/boards";
 import { normalizeText } from "../utils/normalize";
+import { listTagsByIds } from "./tags.repository";
 
 type WatchCallback<T> = (value: T) => void;
 type ErrorCallback = (error: Error) => void;
@@ -62,6 +64,10 @@ const mapBoard = (id: string, data: any): Board => {
       }
     : undefined;
 
+  const tagIds = Array.isArray(data?.tagIds)
+    ? (data.tagIds as string[]).filter(Boolean)
+    : [];
+
   return {
     id,
     title: String(data?.title ?? data?.name ?? "Board"),
@@ -70,9 +76,36 @@ const mapBoard = (id: string, data: any): Board => {
     members,
     status: (data?.status ?? "active") as BoardStatus,
     pomodoro,
+    tagIds,
+    tags: [],
+    tags_lc: Array.isArray(data?.tags_lc)
+      ? (data.tags_lc as string[]).filter(Boolean)
+      : undefined,
     createdAt: toMillis(data?.createdAt),
     updatedAt: toMillis(data?.updatedAt),
   };
+};
+
+const hydrateBoardsWithTags = async (boards: Board[]): Promise<Board[]> => {
+  if (!boards.length) return boards;
+
+  const allTagIds = Array.from(
+    new Set(boards.flatMap((b) => b.tagIds ?? []).filter(Boolean)),
+  );
+
+  if (!allTagIds.length) {
+    return boards.map((b) => ({ ...b, tags: [] }));
+  }
+
+  const tags = await listTagsByIds(allTagIds);
+  const tagsMap = new Map(tags.map((t) => [t.id, t]));
+
+  return boards.map((board) => ({
+    ...board,
+    tags: (board.tagIds ?? [])
+      .map((id) => tagsMap.get(id))
+      .filter(Boolean) as Tag[],
+  }));
 };
 
 const mapColumn = (id: string, data: any): BoardColumn => ({
@@ -112,7 +145,9 @@ export function watchBoards(
       const rows = snap.docs.map((docSnap) =>
         mapBoard(docSnap.id, docSnap.data()),
       );
-      onData(rows);
+      hydrateBoardsWithTags(rows)
+        .then((hydrated) => onData(hydrated))
+        .catch(() => onData(rows));
     },
     (error) => onError?.(error as Error),
   );
@@ -131,7 +166,10 @@ export function watchBoard(
         onData(null);
         return;
       }
-      onData(mapBoard(snap.id, snap.data()));
+      const board = mapBoard(snap.id, snap.data());
+      hydrateBoardsWithTags([board])
+        .then((hydrated) => onData(hydrated[0] ?? board))
+        .catch(() => onData(board));
     },
     (error) => onError?.(error as Error),
   );
@@ -178,6 +216,7 @@ export async function createBoard(input: {
   description?: string;
   createdBy: string;
   members?: string[];
+  tagIds?: string[];
 }) {
   const title = input.title.trim();
   if (!title) throw new Error("Título do board é obrigatório.");
@@ -190,6 +229,7 @@ export async function createBoard(input: {
   );
 
   const description = input.description?.trim();
+  const tagIds = Array.isArray(input.tagIds) ? input.tagIds.filter(Boolean) : [];
 
   const payload: Record<string, any> = {
     title,
@@ -197,7 +237,7 @@ export async function createBoard(input: {
     createdBy,
     members,
     status: "active",
-    tagIds: [],
+    tagIds,
     tags_lc: [],
     pomodoro: {
       enabled: false,
@@ -221,7 +261,12 @@ export async function createBoard(input: {
 
 export async function updateBoard(
   boardId: string,
-  patch: { title?: string; description?: string },
+  patch: {
+    title?: string;
+    description?: string;
+    tagIds?: string[];
+    tags?: Tag[];
+  },
 ) {
   if (!boardId) throw new Error("Board inválido.");
 
@@ -241,6 +286,16 @@ export async function updateBoard(
     if (description) {
       payload.description = description;
     }
+  }
+
+  if (Array.isArray(patch.tags)) {
+    payload.tagIds = patch.tags.map((t) => t.id).filter(Boolean);
+    payload.tags_lc = patch.tags.map((t) => normalizeText(t.name ?? ""));
+  } else if ("tagIds" in patch) {
+    const ids = Array.isArray(patch.tagIds)
+      ? Array.from(new Set(patch.tagIds.filter(Boolean)))
+      : [];
+    payload.tagIds = ids;
   }
 
   await updateDoc(doc(firebaseDb, "boards", boardId), payload);
