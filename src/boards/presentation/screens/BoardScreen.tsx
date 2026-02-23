@@ -690,7 +690,7 @@ export function BoardScreen() {
                                   </Text>
                                 ) : null}
                                 <HStack className="items-center justify-end pt-1">
-                                  <Box accessibilityLabel={`Prioridade ${priorityMeta.label}`}>
+                                  <Box>
                                     <PriorityIcon size={14} color={priorityMeta.color} />
                                   </Box>
                                 </HStack>
