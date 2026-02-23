@@ -7,8 +7,10 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronUp,
+  ChevronsUp,
   LogOut,
   MoreVertical,
+  Minus,
   Plus,
   Pencil,
   Timer,
@@ -30,13 +32,27 @@ import { useColorScheme } from "@/components/useColorScheme";
 import { useAuthStore } from "@/src/auth/store/auth.store";
 import { useSettingsStore } from "@/src/settings/store/settings.store";
 import { useBoardViewStore } from "../../store/board-view.store";
-import type { BoardColumn, BoardItem } from "../../types/boards";
+import type { BoardColumn, BoardItem, BoardItemPriority } from "../../types/boards";
 import { ColumnFormModal } from "../components/ColumnFormModal";
 import { ItemFormModal } from "../components/ItemFormModal";
 import { PomodoroLockModal } from "../components/PomodoroLockModal";
 import { PomodoroSettingsModal } from "../components/PomodoroSettingsModal";
 
 const MotionView = Motion.View as unknown as React.ComponentType<any>;
+
+const getPriorityMeta = (priority?: BoardItemPriority | null) => {
+  switch (priority) {
+    case "low":
+      return { Icon: ChevronDown, color: "#10b981", label: "Baixa" };
+    case "high":
+      return { Icon: ChevronUp, color: "#f59e0b", label: "Alta" };
+    case "urgent":
+      return { Icon: ChevronsUp, color: "#ef4444", label: "Urgente" };
+    case "medium":
+    default:
+      return { Icon: Minus, color: "#64748b", label: "Média" };
+  }
+};
 
 type PomodoroStage = "work" | "rest" | null;
 
@@ -643,18 +659,21 @@ export function BoardScreen() {
                           </Text>
                         ) : null}
 
-                        {columnItems.map((task) => (
-                          <Box
-                            key={task.id}
-                            className="rounded-xl border border-outline-200 bg-background-0 p-3"
-                          >
-                            <VStack space="xs">
-                              <HStack className="items-start justify-between">
-                                <Text size="sm" className="font-semibold text-typography-900 flex-1 pr-2">
-                                  {task.title}
-                                </Text>
-                                {!readOnly ? (
-                                  <HStack space="xs" className="items-center">
+                        {columnItems.map((task) => {
+                          const priorityMeta = getPriorityMeta(task.priority);
+                          const PriorityIcon = priorityMeta.Icon;
+
+                          return (
+                            <Box
+                              key={task.id}
+                              className="rounded-xl border border-outline-200 bg-background-0 p-3"
+                            >
+                              <VStack space="xs">
+                                <HStack className="items-start justify-between">
+                                  <Text size="sm" className="font-semibold text-typography-900 flex-1 pr-2">
+                                    {task.title}
+                                  </Text>
+                                  {!readOnly ? (
                                     <Button
                                       size="xs"
                                       variant="link"
@@ -663,17 +682,22 @@ export function BoardScreen() {
                                     >
                                       <ButtonIcon as={Pencil} />
                                     </Button>
-                                  </HStack>
+                                  ) : null}
+                                </HStack>
+                                {task.description ? (
+                                  <Text size="xs" className="text-typography-600">
+                                    {task.description}
+                                  </Text>
                                 ) : null}
-                              </HStack>
-                              {task.description ? (
-                                <Text size="xs" className="text-typography-600">
-                                  {task.description}
-                                </Text>
-                              ) : null}
-                            </VStack>
-                          </Box>
-                        ))}
+                                <HStack className="items-center justify-end pt-1">
+                                  <Box accessibilityLabel={`Prioridade ${priorityMeta.label}`}>
+                                    <PriorityIcon size={14} color={priorityMeta.color} />
+                                  </Box>
+                                </HStack>
+                              </VStack>
+                            </Box>
+                          );
+                        })}
 
                         {!readOnly ? (
                           <Button
@@ -794,6 +818,7 @@ export function BoardScreen() {
             columnId: creatingItemFor,
             title: input.title,
             description: input.description,
+            priority: input.priority,
           });
           setCreatingItemFor(null);
         }}
@@ -815,7 +840,11 @@ export function BoardScreen() {
         }
         initial={
           editingItem
-            ? { title: editingItem.title, description: editingItem.description }
+            ? {
+                title: editingItem.title,
+                description: editingItem.description,
+                priority: editingItem.priority,
+              }
             : undefined
         }
         onClose={() => setEditingItem(null)}
@@ -825,6 +854,7 @@ export function BoardScreen() {
             itemId: editingItem.id,
             title: input.title,
             description: input.description,
+            priority: input.priority,
           });
           setEditingItem(null);
         }}

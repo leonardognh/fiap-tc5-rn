@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Board, BoardColumn, BoardItem } from "../types/boards";
+import type { Board, BoardColumn, BoardItem, BoardItemPriority } from "../types/boards";
 import * as repo from "../data/boards.repository";
 
 type BoardViewState = {
@@ -19,11 +19,13 @@ type BoardViewState = {
     columnId: string;
     title: string;
     description?: string;
+    priority?: BoardItemPriority;
   }) => Promise<void>;
   updateItem: (input: {
     itemId: string;
     title?: string;
     description?: string;
+    priority?: BoardItemPriority;
   }) => Promise<void>;
   deleteItem: (itemId: string) => Promise<void>;
   moveItem: (itemId: string, toColumnId: string) => Promise<void>;
@@ -170,6 +172,7 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
         columnId: input.columnId,
         title: input.title,
         description: input.description,
+        priority: input.priority,
       });
     } catch (err: any) {
       set({ error: err?.message ?? "Falha ao criar item." });
@@ -186,6 +189,7 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
         itemId: input.itemId,
         title: input.title,
         description: input.description,
+        priority: input.priority,
       });
     } catch (err: any) {
       set({ error: err?.message ?? "Falha ao atualizar item." });

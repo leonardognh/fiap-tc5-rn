@@ -4,6 +4,7 @@ import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";
 import { HStack } from "@/components/ui/hstack";
 import { Heading } from "@/components/ui/heading";
+import { Text } from "@/components/ui/text";
 import { Input, InputField } from "@/components/ui/input";
 import { Button, ButtonText } from "@/components/ui/button";
 import {
@@ -20,7 +21,7 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { ChevronDown } from "lucide-react-native";
-import type { ItemFormInput } from "../../types/boards";
+import type { BoardItemPriority, ItemFormInput } from "../../types/boards";
 import type { BoardColumn } from "../../types/boards";
 
 type ItemFormModalProps = {
@@ -49,14 +50,27 @@ export function ItemFormModal({
 }: ItemFormModalProps) {
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
+  const [formPriority, setFormPriority] = useState<BoardItemPriority>("medium");
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible) {
+      setFormTitle("");
+      setFormDescription("");
+      setFormPriority("medium");
+      return;
+    }
     setFormTitle(initial?.title ?? "");
     setFormDescription(initial?.description ?? "");
-  }, [visible, initial?.title, initial?.description]);
+    setFormPriority(initial?.priority ?? "medium");
+  }, [visible, initial?.title, initial?.description, initial?.priority]);
 
   const canSubmit = useMemo(() => formTitle.trim().length >= 2, [formTitle]);
+  const priorityLabels: Record<BoardItemPriority, string> = {
+    low: "Baixa",
+    medium: "Média",
+    high: "Alta",
+    urgent: "Urgente",
+  };
 
   return (
     <Modal visible={visible} transparent animationType="fade">
@@ -90,6 +104,41 @@ export function ItemFormModal({
                   className="min-h-[120px] py-2 text-typography-900"
                 />
               </Input>
+
+              <VStack space="xs">
+                <Text size="sm" className="text-typography-600">
+                  Prioridade
+                </Text>
+                <Select
+                  key={`priority-${visible ? "open" : "closed"}`}
+                  selectedValue={formPriority}
+                  initialLabel={priorityLabels[formPriority]}
+                  onValueChange={(value) => setFormPriority(value as BoardItemPriority)}
+                >
+                  <SelectTrigger
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl border-outline-300 w-full"
+                  >
+                    <SelectInput placeholder="Selecionar prioridade" />
+                    <SelectIcon as={ChevronDown} className="mr-2 text-typography-500" />
+                  </SelectTrigger>
+                  <SelectPortal>
+                    <SelectBackdrop />
+                    <SelectContent>
+                      <SelectDragIndicatorWrapper>
+                        <SelectDragIndicator />
+                      </SelectDragIndicatorWrapper>
+                      <SelectScrollView className="max-h-[320px]">
+                        <SelectItem label="Baixa" value="low" />
+                        <SelectItem label="Média" value="medium" />
+                        <SelectItem label="Alta" value="high" />
+                        <SelectItem label="Urgente" value="urgent" />
+                      </SelectScrollView>
+                    </SelectContent>
+                  </SelectPortal>
+                </Select>
+              </VStack>
 
               {moveOptions ? (
                 <Select
@@ -139,6 +188,7 @@ export function ItemFormModal({
                 onPress={() => onConfirm({
                   title: formTitle.trim(),
                   description: formDescription.trim(),
+                  priority: formPriority,
                 })}
                 isDisabled={!canSubmit}
                 className={!canSubmit ? "bg-background-300" : undefined}

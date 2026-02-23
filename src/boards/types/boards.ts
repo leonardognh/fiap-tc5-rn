@@ -31,12 +31,15 @@ export type BoardColumn = {
   updatedAt: number;
 };
 
+export type BoardItemPriority = "low" | "medium" | "high" | "urgent";
+
 export type BoardItem = {
   id: string;
   boardId: string;
   columnId: string;
   title: string;
   description?: string;
+  priority?: BoardItemPriority;
   order: number;
   createdAt: number;
   updatedAt: number;
@@ -61,6 +64,7 @@ export type ColumnFormInput = {
 export type ItemFormInput = {
   title: string;
   description?: string;
+  priority?: BoardItemPriority;
 };
 
 

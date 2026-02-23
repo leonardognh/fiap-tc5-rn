@@ -13,7 +13,13 @@
 } from "firebase/firestore";
 
 import { firebaseDb } from "@/src/infrastructure/firebase/firebase.client";
-import type { Board, BoardColumn, BoardItem, BoardStatus } from "../types/boards";
+import type {
+  Board,
+  BoardColumn,
+  BoardItem,
+  BoardItemPriority,
+  BoardStatus,
+} from "../types/boards";
 import { normalizeText } from "../utils/normalize";
 
 type WatchCallback<T> = (value: T) => void;
@@ -23,6 +29,15 @@ const toMillis = (value: any): number => {
   if (typeof value === "number") return value;
   if (value && typeof value.toMillis === "function") return value.toMillis();
   return 0;
+};
+
+const priorityValues = new Set<BoardItemPriority>(["low", "medium", "high", "urgent"]);
+
+const toPriority = (value: any): BoardItemPriority | undefined => {
+  if (typeof value !== "string") return undefined;
+  return priorityValues.has(value as BoardItemPriority)
+    ? (value as BoardItemPriority)
+    : undefined;
 };
 
 const mapBoard = (id: string, data: any): Board => {
@@ -75,6 +90,7 @@ const mapItem = (id: string, data: any): BoardItem => ({
   columnId: String(data?.columnId ?? ""),
   title: String(data?.title ?? ""),
   description: data?.description ?? "",
+  priority: toPriority(data?.priority),
   order: typeof data?.order === "number" ? data.order : 0,
   createdAt: toMillis(data?.createdAt),
   updatedAt: toMillis(data?.updatedAt),
@@ -357,16 +373,19 @@ export async function createItem(input: {
   columnId: string;
   title: string;
   description?: string;
+  priority?: BoardItemPriority;
 }) {
   const trimmed = input.title.trim();
   if (!trimmed) throw new Error("Título do item é obrigatório.");
 
   const now = Date.now();
+  const priority = toPriority(input.priority) ?? "medium";
   await addDoc(collection(firebaseDb, "boards", input.boardId, "items"), {
     boardId: input.boardId,
     columnId: input.columnId,
     title: trimmed,
     description: input.description?.trim() ?? "",
+    priority,
     order: now,
     createdAt: now,
     updatedAt: now,
@@ -378,6 +397,7 @@ export async function updateItem(input: {
   itemId: string;
   title?: string;
   description?: string;
+  priority?: BoardItemPriority;
 }) {
   const payload: Record<string, any> = {
     updatedAt: Date.now(),
@@ -391,6 +411,10 @@ export async function updateItem(input: {
 
   if ("description" in input) {
     payload.description = input.description?.trim() ?? "";
+  }
+
+  if (typeof input.priority === "string") {
+    payload.priority = toPriority(input.priority) ?? "medium";
   }
 
   await updateDoc(doc(firebaseDb, "boards", input.boardId, "items", input.itemId), payload);
