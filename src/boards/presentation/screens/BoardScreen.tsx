@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Modal, Pressable, useWindowDimensions } from "react-native";
+import { Image, Modal, Pressable, useWindowDimensions } from "react-native";
 import { DraxList, DraxListItem, DraxProvider } from "react-native-drax";
 import { router, useLocalSearchParams } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
@@ -32,7 +32,8 @@ import { useColorScheme } from "@/components/useColorScheme";
 import { useAuthStore } from "@/src/auth/store/auth.store";
 import { useSettingsStore } from "@/src/settings/store/settings.store";
 import { useBoardViewStore } from "../../store/board-view.store";
-import type { BoardColumn, BoardItem, BoardItemPriority } from "../../types/boards";
+import type { BoardColumn, BoardItem, BoardItemPriority, BoardUser } from "../../types/boards";
+import { listUsersByIds } from "../../data/users.repository";
 import { ColumnFormModal } from "../components/ColumnFormModal";
 import { ItemFormModal } from "../components/ItemFormModal";
 import { PomodoroLockModal } from "../components/PomodoroLockModal";
@@ -52,6 +53,14 @@ const getPriorityMeta = (priority?: BoardItemPriority | null) => {
     default:
       return { Icon: Minus, color: "#64748b", label: "Média" };
   }
+};
+
+const getInitials = (name?: string | null) => {
+  const n = (name ?? "").trim();
+  if (!n) return "";
+  const parts = n.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 };
 
 type PomodoroStage = "work" | "rest" | null;
@@ -93,6 +102,7 @@ export function BoardScreen() {
   } = useBoardViewStore();
 
   const logout = useAuthStore((s) => s.logout);
+  const authUser = useAuthStore((s) => s.user);
   const preferences = useSettingsStore((s) => s.preferences);
   const toast = useToast();
   const [newColumnTitle, setNewColumnTitle] = useState("");
@@ -102,6 +112,7 @@ export function BoardScreen() {
   const [expandedLines, setExpandedLines] = useState<string[]>([]);
   const [orderedColumns, setOrderedColumns] = useState<BoardColumn[]>([]);
   const [pomodoroOpen, setPomodoroOpen] = useState(false);
+  const [memberUsers, setMemberUsers] = useState<BoardUser[]>([]);
   const [openColumnMenuId, setOpenColumnMenuId] = useState<string | null>(null);
   const [columnMenuAnchor, setColumnMenuAnchor] = useState<{ x: number; y: number } | null>(null);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
@@ -147,6 +158,25 @@ export function BoardScreen() {
     if (!boardId) return;
     return connect(boardId);
   }, [boardId, connect]);
+
+  useEffect(() => {
+    const ids = board?.members ?? [];
+    if (!ids.length) {
+      setMemberUsers([]);
+      return;
+    }
+    let cancelled = false;
+    listUsersByIds(ids)
+      .then((users) => {
+        if (!cancelled) setMemberUsers(users);
+      })
+      .catch(() => {
+        if (!cancelled) setMemberUsers([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [board?.members]);
 
   useEffect(() => {
     setOrderedColumns(columns);
@@ -521,7 +551,7 @@ export function BoardScreen() {
         <HStack space="sm" className="items-center">
           <Input className="border-outline-300 rounded-xl flex-1">
             <InputField
-              placeholder="Nova classificação"
+              placeholder="Nova coluna"
               value={newColumnTitle}
               onChangeText={setNewColumnTitle}
               onSubmitEditing={handleAddColumn}
@@ -689,7 +719,21 @@ export function BoardScreen() {
                                     {task.description}
                                   </Text>
                                 ) : null}
-                                <HStack className="items-center justify-end pt-1">
+                                <HStack className="items-center justify-end pt-1 space-x-2">
+                                  {task.assignedTo ? (
+                                    task.assignedPhotoUrl ? (
+                                      <Image
+                                        source={{ uri: task.assignedPhotoUrl }}
+                                        className="h-5 w-5 rounded-full"
+                                      />
+                                    ) : (
+                                      <Box className="h-5 w-5 rounded-full bg-background-200 items-center justify-center">
+                                        <Text size="xs" className="text-typography-700">
+                                          {getInitials(task.assignedName ?? task.assignedTo)}
+                                        </Text>
+                                      </Box>
+                                    )
+                                  ) : null}
                                   <Box>
                                     <PriorityIcon size={14} color={priorityMeta.color} />
                                   </Box>
@@ -811,6 +855,16 @@ export function BoardScreen() {
         visible={!!creatingItemFor}
         title="Novo item"
         confirmLabel="Criar"
+        assignees={memberUsers}
+        currentUser={
+          authUser
+            ? {
+                id: authUser.uid,
+                displayName: authUser.displayName,
+                photoURL: authUser.photoURL,
+              }
+            : undefined
+        }
         onClose={() => setCreatingItemFor(null)}
         onConfirm={async (input) => {
           if (!creatingItemFor) return;
@@ -819,6 +873,9 @@ export function BoardScreen() {
             title: input.title,
             description: input.description,
             priority: input.priority,
+            assignedTo: input.assignedTo,
+            assignedName: input.assignedName,
+            assignedPhotoUrl: input.assignedPhotoUrl,
           });
           setCreatingItemFor(null);
         }}
@@ -828,6 +885,16 @@ export function BoardScreen() {
         visible={!!editingItem}
         title="Editar item"
         confirmLabel="Salvar"
+        assignees={memberUsers}
+        currentUser={
+          authUser
+            ? {
+                id: authUser.uid,
+                displayName: authUser.displayName,
+                photoURL: authUser.photoURL,
+              }
+            : undefined
+        }
         moveOptions={
           editingItem
             ? {
@@ -844,6 +911,9 @@ export function BoardScreen() {
                 title: editingItem.title,
                 description: editingItem.description,
                 priority: editingItem.priority,
+                assignedTo: editingItem.assignedTo,
+                assignedName: editingItem.assignedName,
+                assignedPhotoUrl: editingItem.assignedPhotoUrl,
               }
             : undefined
         }
@@ -855,6 +925,9 @@ export function BoardScreen() {
             title: input.title,
             description: input.description,
             priority: input.priority,
+            assignedTo: input.assignedTo,
+            assignedName: input.assignedName,
+            assignedPhotoUrl: input.assignedPhotoUrl,
           });
           setEditingItem(null);
         }}

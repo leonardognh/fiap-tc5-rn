@@ -123,6 +123,9 @@ const mapItem = (id: string, data: any): BoardItem => ({
   columnId: String(data?.columnId ?? ""),
   title: String(data?.title ?? ""),
   description: data?.description ?? "",
+  assignedTo: data?.assignedTo ?? null,
+  assignedName: data?.assignedName ?? null,
+  assignedPhotoUrl: data?.assignedPhotoUrl ?? null,
   priority: toPriority(data?.priority),
   order: typeof data?.order === "number" ? data.order : 0,
   createdAt: toMillis(data?.createdAt),
@@ -429,6 +432,9 @@ export async function createItem(input: {
   title: string;
   description?: string;
   priority?: BoardItemPriority;
+  assignedTo?: string | null;
+  assignedName?: string | null;
+  assignedPhotoUrl?: string | null;
 }) {
   const trimmed = input.title.trim();
   if (!trimmed) throw new Error("Título do item é obrigatório.");
@@ -440,6 +446,9 @@ export async function createItem(input: {
     columnId: input.columnId,
     title: trimmed,
     description: input.description?.trim() ?? "",
+    assignedTo: input.assignedTo ?? null,
+    assignedName: input.assignedName ?? null,
+    assignedPhotoUrl: input.assignedPhotoUrl ?? null,
     priority,
     order: now,
     createdAt: now,
@@ -453,6 +462,9 @@ export async function updateItem(input: {
   title?: string;
   description?: string;
   priority?: BoardItemPriority;
+  assignedTo?: string | null;
+  assignedName?: string | null;
+  assignedPhotoUrl?: string | null;
 }) {
   const payload: Record<string, any> = {
     updatedAt: Date.now(),
@@ -470,6 +482,12 @@ export async function updateItem(input: {
 
   if (typeof input.priority === "string") {
     payload.priority = toPriority(input.priority) ?? "medium";
+  }
+
+  if ("assignedTo" in input) {
+    payload.assignedTo = input.assignedTo ?? null;
+    payload.assignedName = input.assignedName ?? null;
+    payload.assignedPhotoUrl = input.assignedPhotoUrl ?? null;
   }
 
   await updateDoc(doc(firebaseDb, "boards", input.boardId, "items", input.itemId), payload);

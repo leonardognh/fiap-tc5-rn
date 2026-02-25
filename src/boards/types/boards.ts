@@ -43,12 +43,22 @@ export type BoardColumn = {
 
 export type BoardItemPriority = "low" | "medium" | "high" | "urgent";
 
+export type BoardUser = {
+  id: string;
+  displayName: string;
+  email?: string;
+  photoURL?: string;
+};
+
 export type BoardItem = {
   id: string;
   boardId: string;
   columnId: string;
   title: string;
   description?: string;
+  assignedTo?: string | null;
+  assignedName?: string | null;
+  assignedPhotoUrl?: string | null;
   priority?: BoardItemPriority;
   order: number;
   createdAt: number;
@@ -77,6 +87,9 @@ export type ItemFormInput = {
   title: string;
   description?: string;
   priority?: BoardItemPriority;
+  assignedTo?: string | null;
+  assignedName?: string | null;
+  assignedPhotoUrl?: string | null;
 };
 
 

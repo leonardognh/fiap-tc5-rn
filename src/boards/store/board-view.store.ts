@@ -20,12 +20,18 @@ type BoardViewState = {
     title: string;
     description?: string;
     priority?: BoardItemPriority;
+    assignedTo?: string | null;
+    assignedName?: string | null;
+    assignedPhotoUrl?: string | null;
   }) => Promise<void>;
   updateItem: (input: {
     itemId: string;
     title?: string;
     description?: string;
     priority?: BoardItemPriority;
+    assignedTo?: string | null;
+    assignedName?: string | null;
+    assignedPhotoUrl?: string | null;
   }) => Promise<void>;
   deleteItem: (itemId: string) => Promise<void>;
   moveItem: (itemId: string, toColumnId: string) => Promise<void>;
@@ -173,6 +179,9 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
         title: input.title,
         description: input.description,
         priority: input.priority,
+        assignedTo: input.assignedTo,
+        assignedName: input.assignedName,
+        assignedPhotoUrl: input.assignedPhotoUrl,
       });
     } catch (err: any) {
       set({ error: err?.message ?? "Falha ao criar item." });
@@ -190,6 +199,9 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
         title: input.title,
         description: input.description,
         priority: input.priority,
+        assignedTo: input.assignedTo,
+        assignedName: input.assignedName,
+        assignedPhotoUrl: input.assignedPhotoUrl,
       });
     } catch (err: any) {
       set({ error: err?.message ?? "Falha ao atualizar item." });

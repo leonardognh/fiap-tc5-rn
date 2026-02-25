@@ -6,7 +6,7 @@ import { HStack } from "@/components/ui/hstack";
 import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
 import { Input, InputField } from "@/components/ui/input";
-import { Button, ButtonText } from "@/components/ui/button";
+import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
 import {
   Select,
   SelectBackdrop,
@@ -20,8 +20,8 @@ import {
   SelectScrollView,
   SelectTrigger,
 } from "@/components/ui/select";
-import { ChevronDown } from "lucide-react-native";
-import type { BoardItemPriority, ItemFormInput } from "../../types/boards";
+import { ChevronDown, User, UserPlus } from "lucide-react-native";
+import type { BoardItemPriority, BoardUser, ItemFormInput } from "../../types/boards";
 import type { BoardColumn } from "../../types/boards";
 
 type ItemFormModalProps = {
@@ -35,6 +35,8 @@ type ItemFormModalProps = {
     onMove: (columnId: string) => void;
     disabled?: boolean;
   };
+  assignees?: BoardUser[];
+  currentUser?: { id: string; displayName?: string | null; photoURL?: string | null };
   onClose: () => void;
   onConfirm: (input: ItemFormInput) => void;
 };
@@ -45,24 +47,43 @@ export function ItemFormModal({
   confirmLabel = "Salvar",
   initial,
   moveOptions,
+  assignees,
+  currentUser,
   onClose,
   onConfirm,
 }: ItemFormModalProps) {
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formPriority, setFormPriority] = useState<BoardItemPriority>("medium");
+  const [formAssigneeId, setFormAssigneeId] = useState<string | null>(null);
+  const [formAssigneeName, setFormAssigneeName] = useState<string | null>(null);
+  const [formAssigneePhoto, setFormAssigneePhoto] = useState<string | null>(null);
 
   useEffect(() => {
     if (!visible) {
       setFormTitle("");
       setFormDescription("");
       setFormPriority("medium");
+      setFormAssigneeId(null);
+      setFormAssigneeName(null);
+      setFormAssigneePhoto(null);
       return;
     }
     setFormTitle(initial?.title ?? "");
     setFormDescription(initial?.description ?? "");
     setFormPriority(initial?.priority ?? "medium");
-  }, [visible, initial?.title, initial?.description, initial?.priority]);
+    setFormAssigneeId(initial?.assignedTo ?? null);
+    setFormAssigneeName(initial?.assignedName ?? null);
+    setFormAssigneePhoto(initial?.assignedPhotoUrl ?? null);
+  }, [
+    visible,
+    initial?.title,
+    initial?.description,
+    initial?.priority,
+    initial?.assignedTo,
+    initial?.assignedName,
+    initial?.assignedPhotoUrl,
+  ]);
 
   const canSubmit = useMemo(() => formTitle.trim().length >= 2, [formTitle]);
   const priorityLabels: Record<BoardItemPriority, string> = {
@@ -71,18 +92,45 @@ export function ItemFormModal({
     high: "Alta",
     urgent: "Urgente",
   };
+  const assigneeLabels = useMemo(() => {
+    const map = new Map<string, string>();
+    (assignees ?? []).forEach((u) => {
+      map.set(u.id, u.displayName || u.email || u.id);
+    });
+    return map;
+  }, [assignees]);
+
+  const handleAssigneeChange = (value: string) => {
+    if (value === "__none__") {
+      setFormAssigneeId(null);
+      setFormAssigneeName(null);
+      setFormAssigneePhoto(null);
+      return;
+    }
+    const user = assignees?.find((u) => u.id === value);
+    setFormAssigneeId(value);
+    setFormAssigneeName(user?.displayName ?? user?.email ?? value);
+    setFormAssigneePhoto(user?.photoURL ?? null);
+  };
+
+  const handleAssignToMe = () => {
+    if (!currentUser?.id) return;
+    setFormAssigneeId(currentUser.id);
+    setFormAssigneeName(currentUser.displayName ?? currentUser.id);
+    setFormAssigneePhoto(currentUser.photoURL ?? null);
+  };
 
   return (
     <Modal visible={visible} transparent animationType="fade">
       <Box className="flex-1 items-center justify-center bg-black/50 px-4">
         <Pressable className="absolute inset-0" onPress={onClose} />
-        <Box className="w-full max-w-[520px] rounded-2xl bg-background-0 p-5">
-          <VStack space="md">
+        <Box className="w-full max-w-[520px] rounded-2xl bg-background-0 p-6">
+          <VStack space="lg">
             <Heading size="lg" className="text-typography-900">
               {title}
             </Heading>
 
-            <VStack space="sm">
+            <VStack space="md">
               <Input className="border-outline-300 rounded-xl">
                 <InputField
                   placeholder="Título do item"
@@ -105,7 +153,7 @@ export function ItemFormModal({
                 />
               </Input>
 
-              <VStack space="xs">
+              <VStack space="sm">
                 <Text size="sm" className="text-typography-600">
                   Prioridade
                 </Text>
@@ -139,6 +187,43 @@ export function ItemFormModal({
                   </SelectPortal>
                 </Select>
               </VStack>
+
+              {assignees && assignees.length > 0 ? (
+                <VStack space="sm">
+                  <HStack space="sm" className="items-center">
+                    <Box className="relative">
+                      <Box className="h-12 w-12 items-center justify-center rounded-full border-2 border-emerald-400 bg-transparent">
+                        <User size={18} className="text-emerald-400" />
+                      </Box>
+                      <Box className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border border-background-0 bg-emerald-400" />
+                    </Box>
+                    <VStack space="xs">
+                      <Text size="xs" className="text-typography-500">
+                        Atribuído a
+                      </Text>
+                      <Text
+                        size="sm"
+                        className="text-typography-900 font-semibold"
+                      >
+                        {formAssigneeId
+                          ? formAssigneeName ?? formAssigneeId
+                          : "Não atribuído"}
+                      </Text>
+                    </VStack>
+                  </HStack>
+                  {currentUser?.id ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onPress={handleAssignToMe}
+                      className="w-full rounded-xl border-outline-300 bg-transparent"
+                    >
+                      <ButtonIcon as={UserPlus} className="text-typography-900" />
+                      <ButtonText className="text-typography-900">Atribuir a mim</ButtonText>
+                    </Button>
+                  ) : null}
+                </VStack>
+              ) : null}
 
               {moveOptions ? (
                 <Select
@@ -189,6 +274,9 @@ export function ItemFormModal({
                   title: formTitle.trim(),
                   description: formDescription.trim(),
                   priority: formPriority,
+                  assignedTo: formAssigneeId,
+                  assignedName: formAssigneeName,
+                  assignedPhotoUrl: formAssigneePhoto,
                 })}
                 isDisabled={!canSubmit}
                 className={!canSubmit ? "bg-background-300" : undefined}
