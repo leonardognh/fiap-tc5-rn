@@ -265,31 +265,33 @@ export function BoardsListScreen() {
                           </Text>
                         ) : null}
 
+                        <Box className="min-h-[20px]">
+                          {board.tags && board.tags.length > 0 ? (
+                            <HStack space="xs" className="flex-wrap">
+                              {board.tags.slice(0, 6).map((tag) => (
+                                <Box
+                                  key={tag.id}
+                                  className="rounded-full border border-outline-200 px-2 py-1"
+                                >
+                                  <Text size="xs" className="text-typography-600">
+                                    {tag.name}
+                                  </Text>
+                                </Box>
+                              ))}
+                              {board.tags.length > 6 ? (
+                                <Box className="rounded-full border border-outline-200 px-2 py-1">
+                                  <Text size="xs" className="text-typography-600">
+                                    +{board.tags.length - 6}
+                                  </Text>
+                                </Box>
+                              ) : null}
+                            </HStack>
+                          ) : null}
+                        </Box>
+
                         <Text size="xs" className="text-typography-400">
                           Atualizado em {new Date(board.updatedAt).toLocaleDateString()}
                         </Text>
-
-                        {board.tags && board.tags.length > 0 ? (
-                          <HStack space="xs" className="flex-wrap">
-                            {board.tags.slice(0, 6).map((tag) => (
-                              <Box
-                                key={tag.id}
-                                className="rounded-full border border-outline-200 px-2 py-1"
-                              >
-                                <Text size="xs" className="text-typography-600">
-                                  {tag.name}
-                                </Text>
-                              </Box>
-                            ))}
-                            {board.tags.length > 6 ? (
-                              <Box className="rounded-full border border-outline-200 px-2 py-1">
-                                <Text size="xs" className="text-typography-600">
-                                  +{board.tags.length - 6}
-                                </Text>
-                              </Box>
-                            ) : null}
-                          </HStack>
-                        ) : null}
                       </VStack>
                     </Box>
                   </Pressable>
@@ -412,10 +414,6 @@ export function BoardsListScreen() {
     </Box>
   );
 }
-
-
-
-
 
 
 
