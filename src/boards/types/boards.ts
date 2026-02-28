@@ -28,6 +28,8 @@ export type Board = {
   tagIds: string[];
   tags?: Tag[];
   tags_lc?: string[];
+  notStartedColumnIds?: string[];
+  doneColumnIds?: string[];
   createdAt: number;
   updatedAt: number;
 };
@@ -77,6 +79,8 @@ export type BoardFormInput = {
   description?: string;
   tagIds?: string[];
   tags?: Tag[];
+  notStartedColumnIds?: string[];
+  doneColumnIds?: string[];
 };
 
 export type ColumnFormInput = {

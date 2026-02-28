@@ -24,7 +24,8 @@ import { Input, InputField, InputIcon, InputSlot } from "@/components/ui/input";
 import { useAuthStore } from "@/src/auth/store/auth.store";
 import { useSettingsStore } from "@/src/settings/store/settings.store";
 import { useBoardsStore } from "../../store/boards.store";
-import type { Board } from "../../types/boards";
+import type { Board, BoardColumn } from "../../types/boards";
+import { watchColumns } from "../../data/boards.repository";
 import { BoardFormModal } from "../components/BoardFormModal";
 
 const MotionView = Motion.View as unknown as React.ComponentType<any>;
@@ -61,6 +62,7 @@ export function BoardsListScreen() {
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number } | null>(null);
+  const [editingColumns, setEditingColumns] = useState<BoardColumn[]>([]);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const menuWidth = 180;
   const selectedBoard = openMenuId
@@ -83,6 +85,19 @@ export function BoardsListScreen() {
       setQuery({ status: "active" as any });
     }
   }, [focusModeEnabled, query.status, setQuery]);
+
+  useEffect(() => {
+    if (!editing?.id) {
+      setEditingColumns([]);
+      return;
+    }
+    const unsub = watchColumns(
+      editing.id,
+      (cols) => setEditingColumns(cols),
+      () => setEditingColumns([]),
+    );
+    return () => unsub();
+  }, [editing?.id]);
 
   const statusOptions = useMemo(
     () => [
@@ -384,6 +399,7 @@ export function BoardsListScreen() {
         visible={!!editing}
         title="Editar board"
         confirmLabel="Salvar"
+        columns={editingColumns}
         initial={
           editing
             ? {
@@ -391,6 +407,8 @@ export function BoardsListScreen() {
                 description: editing.description,
                 tags: editing.tags ?? [],
                 tagIds: editing.tagIds ?? [],
+                notStartedColumnIds: editing.notStartedColumnIds ?? [],
+                doneColumnIds: editing.doneColumnIds ?? [],
               }
             : undefined
         }

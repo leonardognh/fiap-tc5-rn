@@ -67,6 +67,12 @@ const mapBoard = (id: string, data: any): Board => {
   const tagIds = Array.isArray(data?.tagIds)
     ? (data.tagIds as string[]).filter(Boolean)
     : [];
+  const notStartedColumnIds = Array.isArray(data?.notStartedColumnIds)
+    ? (data.notStartedColumnIds as string[]).filter(Boolean)
+    : [];
+  const doneColumnIds = Array.isArray(data?.doneColumnIds)
+    ? (data.doneColumnIds as string[]).filter(Boolean)
+    : [];
 
   return {
     id,
@@ -81,6 +87,8 @@ const mapBoard = (id: string, data: any): Board => {
     tags_lc: Array.isArray(data?.tags_lc)
       ? (data.tags_lc as string[]).filter(Boolean)
       : undefined,
+    notStartedColumnIds,
+    doneColumnIds,
     createdAt: toMillis(data?.createdAt),
     updatedAt: toMillis(data?.updatedAt),
   };
@@ -220,6 +228,8 @@ export async function createBoard(input: {
   createdBy: string;
   members?: string[];
   tagIds?: string[];
+  notStartedColumnIds?: string[];
+  doneColumnIds?: string[];
 }) {
   const title = input.title.trim();
   if (!title) throw new Error("Título do board é obrigatório.");
@@ -233,6 +243,12 @@ export async function createBoard(input: {
 
   const description = input.description?.trim();
   const tagIds = Array.isArray(input.tagIds) ? input.tagIds.filter(Boolean) : [];
+  const notStartedColumnIds = Array.isArray(input.notStartedColumnIds)
+    ? Array.from(new Set(input.notStartedColumnIds.filter(Boolean)))
+    : [];
+  const doneColumnIds = Array.isArray(input.doneColumnIds)
+    ? Array.from(new Set(input.doneColumnIds.filter(Boolean)))
+    : [];
 
   const payload: Record<string, any> = {
     title,
@@ -242,6 +258,8 @@ export async function createBoard(input: {
     status: "active",
     tagIds,
     tags_lc: [],
+    notStartedColumnIds,
+    doneColumnIds,
     pomodoro: {
       enabled: false,
       workSeconds: null,
@@ -269,6 +287,8 @@ export async function updateBoard(
     description?: string;
     tagIds?: string[];
     tags?: Tag[];
+    notStartedColumnIds?: string[];
+    doneColumnIds?: string[];
   },
 ) {
   if (!boardId) throw new Error("Board inválido.");
@@ -299,6 +319,18 @@ export async function updateBoard(
       ? Array.from(new Set(patch.tagIds.filter(Boolean)))
       : [];
     payload.tagIds = ids;
+  }
+
+  if ("notStartedColumnIds" in patch) {
+    payload.notStartedColumnIds = Array.isArray(patch.notStartedColumnIds)
+      ? Array.from(new Set(patch.notStartedColumnIds.filter(Boolean)))
+      : [];
+  }
+
+  if ("doneColumnIds" in patch) {
+    payload.doneColumnIds = Array.isArray(patch.doneColumnIds)
+      ? Array.from(new Set(patch.doneColumnIds.filter(Boolean)))
+      : [];
   }
 
   await updateDoc(doc(firebaseDb, "boards", boardId), payload);

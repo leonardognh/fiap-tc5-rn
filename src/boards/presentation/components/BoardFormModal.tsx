@@ -8,14 +8,16 @@ import { Text } from "@/components/ui/text";
 import { Input, InputField } from "@/components/ui/input";
 import { Button, ButtonText } from "@/components/ui/button";
 import { TagsMultiSelect } from "./TagsMultiSelect";
+import { ColumnsMultiSelect } from "./ColumnsMultiSelect";
 import { listTagsByIds } from "../../data/tags.repository";
-import type { BoardFormInput, Tag } from "../../types/boards";
+import type { BoardColumn, BoardFormInput, Tag } from "../../types/boards";
 
 type BoardFormModalProps = {
   visible: boolean;
   title: string;
   confirmLabel?: string;
   initial?: BoardFormInput;
+  columns?: BoardColumn[];
   submitting?: boolean;
   onClose: () => void;
   onConfirm: (input: BoardFormInput) => void;
@@ -26,6 +28,7 @@ export function BoardFormModal({
   title,
   confirmLabel = "Salvar",
   initial,
+  columns = [],
   submitting,
   onClose,
   onConfirm,
@@ -33,16 +36,22 @@ export function BoardFormModal({
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+  const [notStartedColumnIds, setNotStartedColumnIds] = useState<string[]>([]);
+  const [doneColumnIds, setDoneColumnIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!visible) {
       setFormTitle("");
       setFormDescription("");
       setSelectedTags([]);
+      setNotStartedColumnIds([]);
+      setDoneColumnIds([]);
       return;
     }
     setFormTitle(initial?.title ?? "");
     setFormDescription(initial?.description ?? "");
+    setNotStartedColumnIds(initial?.notStartedColumnIds ?? []);
+    setDoneColumnIds(initial?.doneColumnIds ?? []);
     const initialTags = initial?.tags ?? [];
     const initialIds = initial?.tagIds ?? [];
 
@@ -79,13 +88,38 @@ export function BoardFormModal({
     initial?.description,
     initial?.tags,
     initial?.tagIds,
+    initial?.notStartedColumnIds,
+    initial?.doneColumnIds,
   ]);
+
+  useEffect(() => {
+    if (!columns.length) return;
+    const columnIds = new Set(columns.map((col) => col.id));
+    setNotStartedColumnIds((current) => current.filter((id) => columnIds.has(id)));
+    setDoneColumnIds((current) => current.filter((id) => columnIds.has(id)));
+  }, [columns]);
 
   const canSubmit = useMemo(() => {
     const titleOk = formTitle.trim().length >= 3 && formTitle.trim().length <= 60;
     const descOk = formDescription.trim().length <= 280;
     return titleOk && descOk && !submitting;
   }, [formTitle, formDescription, submitting]);
+
+  const handleNotStartedChange = (next: string[]) => {
+    const filtered = next.filter((id) => !doneColumnIds.includes(id));
+    setNotStartedColumnIds(filtered);
+    if (filtered.length !== next.length) {
+      setDoneColumnIds((current) => current.filter((id) => !filtered.includes(id)));
+    }
+  };
+
+  const handleDoneChange = (next: string[]) => {
+    const filtered = next.filter((id) => !notStartedColumnIds.includes(id));
+    setDoneColumnIds(filtered);
+    if (filtered.length !== next.length) {
+      setNotStartedColumnIds((current) => current.filter((id) => !filtered.includes(id)));
+    }
+  };
 
   const handleConfirm = () => {
     if (!canSubmit) return;
@@ -94,6 +128,8 @@ export function BoardFormModal({
       description: formDescription.trim(),
       tagIds: selectedTags.map((tag) => tag.id).filter(Boolean),
       tags: selectedTags,
+      notStartedColumnIds,
+      doneColumnIds,
     });
   };
 
@@ -134,6 +170,27 @@ export function BoardFormModal({
                   className="min-h-[120px] py-2 text-typography-900"
                 />
               </Input>
+
+              {columns.length > 0 ? (
+                <>
+                  <ColumnsMultiSelect
+                    label="Não iniciadas"
+                    value={notStartedColumnIds}
+                    options={columns}
+                    onChange={handleNotStartedChange}
+                    disabled={!!submitting}
+                    placeholder="Selecione colunas"
+                  />
+                  <ColumnsMultiSelect
+                    label="Done"
+                    value={doneColumnIds}
+                    options={columns}
+                    onChange={handleDoneChange}
+                    disabled={!!submitting}
+                    placeholder="Selecione colunas"
+                  />
+                </>
+              ) : null}
 
               <TagsMultiSelect
                 value={selectedTags}

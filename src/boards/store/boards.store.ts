@@ -17,10 +17,19 @@ type BoardsState = {
     title: string;
     description?: string;
     tagIds?: string[];
+    notStartedColumnIds?: string[];
+    doneColumnIds?: string[];
   }) => Promise<void>;
   updateBoard: (
     id: string,
-    patch: { title?: string; description?: string; tagIds?: string[]; tags?: Tag[] },
+    patch: {
+      title?: string;
+      description?: string;
+      tagIds?: string[];
+      tags?: Tag[];
+      notStartedColumnIds?: string[];
+      doneColumnIds?: string[];
+    },
   ) => Promise<void>;
   archiveBoard: (id: string) => Promise<void>;
   unarchiveBoard: (id: string) => Promise<void>;
@@ -137,6 +146,8 @@ export const useBoardsStore = create<BoardsState>((set, get) => ({
         description: input.description,
         createdBy: userId,
         tagIds: input.tagIds,
+        notStartedColumnIds: input.notStartedColumnIds,
+        doneColumnIds: input.doneColumnIds,
       });
     } catch (err: any) {
       set({ error: err?.message ?? "Falha ao criar board.", loading: false });

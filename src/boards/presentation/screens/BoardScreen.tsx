@@ -120,6 +120,91 @@ export function BoardScreen() {
   const selectedColumn = openColumnMenuId
     ? columns.find((column) => column.id === openColumnMenuId)
     : null;
+
+  const notStartedColumnIds = board?.notStartedColumnIds ?? [];
+  const doneColumnIds = board?.doneColumnIds ?? [];
+
+  const checkNotAllowedRules = useCallback(
+    (fromColumnId: string, toColumnId: string) => {
+      if (
+        notStartedColumnIds.includes(fromColumnId) &&
+        doneColumnIds.includes(toColumnId)
+      ) {
+        toast.show({
+          placement: "top",
+          duration: 2500,
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="info" variant="solid">
+              <ToastTitle>Movimento bloqueado</ToastTitle>
+              <ToastDescription>
+                Item não pode ser finalizado sem iniciar.
+              </ToastDescription>
+            </Toast>
+          ),
+        });
+        return true;
+      }
+
+      if (
+        !notStartedColumnIds.includes(fromColumnId) &&
+        notStartedColumnIds.includes(toColumnId)
+      ) {
+        toast.show({
+          placement: "top",
+          duration: 2500,
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="info" variant="solid">
+              <ToastTitle>Movimento bloqueado</ToastTitle>
+              <ToastDescription>
+                Item não pode voltar para "não iniciadas".
+              </ToastDescription>
+            </Toast>
+          ),
+        });
+        return true;
+      }
+
+      if (
+        doneColumnIds.includes(fromColumnId) &&
+        !doneColumnIds.includes(toColumnId)
+      ) {
+        toast.show({
+          placement: "top",
+          duration: 2500,
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+              <ToastTitle>Movimento bloqueado</ToastTitle>
+              <ToastDescription>Item já está concluído.</ToastDescription>
+            </Toast>
+          ),
+        });
+        return true;
+      }
+
+      return false;
+    },
+    [notStartedColumnIds, doneColumnIds, toast],
+  );
+
+  const checkStartedRules = useCallback(
+    (fromColumnId: string, toColumnId: string) => {
+      return (
+        notStartedColumnIds.includes(fromColumnId) &&
+        !notStartedColumnIds.includes(toColumnId)
+      );
+    },
+    [notStartedColumnIds],
+  );
+
+  const checkDoneRules = useCallback(
+    (fromColumnId: string, toColumnId: string) => {
+      return (
+        !doneColumnIds.includes(fromColumnId) &&
+        doneColumnIds.includes(toColumnId)
+      );
+    },
+    [doneColumnIds],
+  );
   const [confirmState, setConfirmState] = useState<{
     title: string;
     message: string;
@@ -288,12 +373,13 @@ export function BoardScreen() {
   const moveItemsBetweenColumns = useCallback(
     async (fromColumnId: string, toColumnId: string, itemIds: string[]) => {
       if (!fromColumnId || !toColumnId || itemIds.length === 0) return;
+      if (checkNotAllowedRules(fromColumnId, toColumnId)) return;
       const existingIds = new Set(itemsRef.current.map((item) => item.id));
       const idsToMove = Array.from(new Set(itemIds)).filter((id) => existingIds.has(id));
       if (!idsToMove.length) return;
       await moveItemsBatch(idsToMove, toColumnId);
     },
-    [moveItemsBatch],
+    [checkNotAllowedRules, moveItemsBatch],
   );
 
   const startCountdown = useCallback(
@@ -478,7 +564,12 @@ export function BoardScreen() {
     );
   };
 
-  const handleMoveTo = async (itemId: string, toColumnId: string) => {
+  const handleMoveTo = async (
+    itemId: string,
+    fromColumnId: string,
+    toColumnId: string,
+  ) => {
+    if (checkNotAllowedRules(fromColumnId, toColumnId)) return;
     await moveItem(itemId, toColumnId);
   };
 
@@ -900,7 +991,8 @@ export function BoardScreen() {
             ? {
                 columns,
                 currentColumnId: editingItem.columnId,
-                onMove: (value) => handleMoveTo(editingItem.id, value),
+                onMove: (value) =>
+                  handleMoveTo(editingItem.id, editingItem.columnId, value),
                 disabled: readOnly || columns.length < 2,
               }
             : undefined
