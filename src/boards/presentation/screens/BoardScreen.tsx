@@ -1,6 +1,12 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Image, Modal, Pressable, useWindowDimensions } from "react-native";
-import { DraxList, DraxListItem, DraxProvider } from "react-native-drax";
+import {
+  Image,
+  Modal,
+  Pressable,
+  useWindowDimensions,
+  type ListRenderItemInfo,
+} from "react-native";
+import { DraxList, DraxListItem, DraxProvider, type DraxListItemProps } from "react-native-drax";
 import { router, useLocalSearchParams } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
 import {
@@ -42,6 +48,47 @@ import { PomodoroLockModal } from "../components/PomodoroLockModal";
 import { PomodoroSettingsModal } from "../components/PomodoroSettingsModal";
 
 const MotionView = Motion.View as unknown as React.ComponentType<any>;
+
+type DraxColumnsListProps = {
+  data: BoardColumn[];
+  readOnly: boolean;
+  renderItem: (
+    info: ListRenderItemInfo<BoardColumn>,
+    itemProps?: DraxListItemProps<BoardColumn>,
+  ) => React.ReactElement | null;
+  onItemReorder: (payload: { fromIndex: number; toIndex: number }) => void;
+};
+
+const DraxColumnsList = React.memo(function DraxColumnsList({
+  data,
+  readOnly,
+  renderItem,
+  onItemReorder,
+}: DraxColumnsListProps) {
+  const listStyle = useMemo(() => ({ flex: 1 }), []);
+  const contentContainerStyle = useMemo(() => ({ paddingBottom: 32, paddingTop: 4 }), []);
+  const parentDraxViewProps = useMemo(() => ({ style: listStyle }), [listStyle]);
+
+  return (
+    <DraxProvider style={listStyle}>
+      <DraxList
+        data={data}
+        keyExtractor={(column) => column.id}
+        contentContainerStyle={contentContainerStyle}
+        longPressDelay={150}
+        reorderable={!readOnly}
+        showsVerticalScrollIndicator
+        scrollEnabled
+        nestedScrollEnabled
+        keyboardShouldPersistTaps="handled"
+        style={listStyle}
+        parentDraxViewProps={parentDraxViewProps}
+        onItemReorder={onItemReorder}
+        renderItem={renderItem}
+      />
+    </DraxProvider>
+  );
+});
 
 const getPriorityMeta = (
   priority: BoardItemPriority | null | undefined,
@@ -117,6 +164,7 @@ export function BoardScreen() {
   const [creatingItemFor, setCreatingItemFor] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<BoardItem | null>(null);
   const [expandedLines, setExpandedLines] = useState<string[]>([]);
+  const expandedSet = useMemo(() => new Set(expandedLines), [expandedLines]);
   const [orderedColumns, setOrderedColumns] = useState<BoardColumn[]>([]);
   const [pomodoroOpen, setPomodoroOpen] = useState(false);
   const [memberUsers, setMemberUsers] = useState<BoardUser[]>([]);
@@ -567,13 +615,180 @@ export function BoardScreen() {
     stopPomodoro,
   ]);
 
-  const toggleLine = (columnId: string) => {
+  const toggleLine = useCallback((columnId: string) => {
     setExpandedLines((current) =>
       current.includes(columnId)
         ? current.filter((id) => id !== columnId)
         : [...current, columnId],
     );
-  };
+  }, []);
+
+  const renderColumn = useCallback(
+    (
+      info: ListRenderItemInfo<BoardColumn>,
+      itemProps?: DraxListItemProps<BoardColumn>,
+    ) => {
+      const column = info.item;
+      const columnItems = itemsByColumn.get(column.id) ?? [];
+      const expanded = expandedSet.has(column.id);
+      const countLabel =
+        columnItems.length === 1
+          ? t("boards.board.count_item")
+          : t("boards.board.count_items");
+      const delay = Math.min((info.index ?? 0) * 40, 200);
+      const motionProps = {
+        initial: animationsEnabled ? { opacity: 0, y: 12 } : { opacity: 1, y: 0 },
+        animate: { opacity: 1, y: 0 },
+        transition: {
+          type: "timing",
+          duration: animationsEnabled ? 420 : 0,
+          delay: animationsEnabled ? delay : 0,
+          easing: "easeOut",
+        },
+      };
+      return (
+        <DraxListItem
+          itemProps={itemProps!}
+          draggable={!readOnly}
+          style={{ marginBottom: 16 }}
+          animateSnap={false}
+          snapDelay={0}
+          snapDuration={0}
+          draggingStyle={{ opacity: 0 }}
+          dragReleasedStyle={{ opacity: 1 }}
+          hoverStyle={{ opacity: 1 }}
+          hoverDraggingStyle={{ opacity: 1 }}
+          hoverDragReleasedStyle={{ opacity: 0 }}
+        >
+          <MotionView {...motionProps}>
+            <Box className="rounded-2xl border border-outline-200 bg-background-50 p-4">
+              <HStack className="items-center justify-between">
+                <Pressable onPress={() => toggleLine(column.id)} style={{ flex: 1 }}>
+                  <VStack space="xs">
+                    <Text size="md" className="font-semibold text-typography-900">
+                      {column.title}
+                    </Text>
+                    <Text size="xs" className="text-typography-500">
+                      {columnItems.length} {countLabel}
+                    </Text>
+                  </VStack>
+                </Pressable>
+                <HStack space="xs" className="items-center">
+                  {!readOnly ? (
+                    <Pressable
+                      onPress={(event) => {
+                        event.stopPropagation?.();
+                        const { pageX, pageY } = event.nativeEvent;
+                        setOpenColumnMenuId((current) =>
+                          current === column.id ? null : column.id,
+                        );
+                        setColumnMenuAnchor({ x: pageX, y: pageY });
+                      }}
+                      hitSlop={8}
+                    >
+                      <Box className="rounded-full border border-outline-200 bg-background-0 p-2">
+                        <MoreVertical size={16} color="#475569" />
+                      </Box>
+                    </Pressable>
+                  ) : null}
+                  <Pressable onPress={() => toggleLine(column.id)} hitSlop={8}>
+                    <Box className="rounded-full border border-outline-200 bg-background-0 p-2">
+                      {expanded ? (
+                        <ChevronUp size={16} color="#475569" />
+                      ) : (
+                        <ChevronDown size={16} color="#475569" />
+                      )}
+                    </Box>
+                  </Pressable>
+                </HStack>
+              </HStack>
+
+              {expanded ? (
+                <VStack space="sm" className="mt-3">
+                  {columnItems.length === 0 ? (
+                    <Text size="xs" className="text-typography-500">
+                      {t("boards.board.empty_column")}
+                    </Text>
+                  ) : null}
+
+                  {columnItems.map((task) => {
+                    const priorityMeta = getPriorityMeta(task.priority, t);
+                    const PriorityIcon = priorityMeta.Icon;
+
+                    return (
+                      <Box
+                        key={task.id}
+                        className="rounded-xl border border-outline-200 bg-background-0 p-3"
+                      >
+                        <VStack space="xs">
+                          <HStack className="items-start justify-between">
+                            <Text
+                              size="sm"
+                              className="font-semibold text-typography-900 flex-1 pr-2"
+                            >
+                              {task.title}
+                            </Text>
+                            {!readOnly ? (
+                              <Button
+                                size="xs"
+                                variant="link"
+                                onPress={() => setEditingItem(task)}
+                                accessibilityLabel={t(
+                                  "boards.board.edit_item_accessibility",
+                                )}
+                              >
+                                <ButtonIcon as={Pencil} />
+                              </Button>
+                            ) : null}
+                          </HStack>
+                          {task.description ? (
+                            <Text size="xs" className="text-typography-600">
+                              {task.description}
+                            </Text>
+                          ) : null}
+                          <HStack className="items-center justify-end pt-1 space-x-2">
+                            {task.assignedTo ? (
+                              task.assignedPhotoUrl ? (
+                                <Image
+                                  source={{ uri: task.assignedPhotoUrl }}
+                                  className="h-5 w-5 rounded-full"
+                                />
+                              ) : (
+                                <Box className="h-5 w-5 rounded-full bg-background-200 items-center justify-center">
+                                  <Text size="xs" className="text-typography-700">
+                                    {getInitials(task.assignedName ?? task.assignedTo)}
+                                  </Text>
+                                </Box>
+                              )
+                            ) : null}
+                            <Box>
+                              <PriorityIcon size={14} color={priorityMeta.color} />
+                            </Box>
+                          </HStack>
+                        </VStack>
+                      </Box>
+                    );
+                  })}
+
+                  {!readOnly ? (
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      onPress={() => setCreatingItemFor(column.id)}
+                    >
+                      <ButtonIcon as={Plus} />
+                      <ButtonText>{t("boards.board.new_item")}</ButtonText>
+                    </Button>
+                  ) : null}
+                </VStack>
+              ) : null}
+            </Box>
+          </MotionView>
+        </DraxListItem>
+      );
+    },
+    [animationsEnabled, expandedSet, itemsByColumn, readOnly, t, toggleLine],
+  );
 
   const handleMoveTo = async (
     itemId: string,
@@ -584,10 +799,28 @@ export function BoardScreen() {
     await moveItem(itemId, toColumnId);
   };
 
-  const handleReorderLines = async (ordered: BoardColumn[]) => {
-    if (readOnly) return;
-    await reorderColumns(ordered.map((col) => col.id));
-  };
+  const handleReorderLines = useCallback(
+    async (ordered: BoardColumn[]) => {
+      if (readOnly) return;
+      await reorderColumns(ordered.map((col) => col.id));
+    },
+    [readOnly, reorderColumns],
+  );
+
+  const handleItemReorder = useCallback(
+    ({ fromIndex, toIndex }: { fromIndex: number; toIndex: number }) => {
+      if (readOnly || fromIndex === toIndex) return;
+      setOrderedColumns((prev) => {
+        const updated = [...prev];
+        const [moved] = updated.splice(fromIndex, 1);
+        updated.splice(toIndex, 0, moved);
+        handleReorderLines(updated);
+        return updated;
+      });
+    },
+    [handleReorderLines, readOnly],
+  );
+
   const confirmDeleteColumn = (column: BoardColumn) => {
     const itemsCount = itemsByColumn.get(column.id)?.length ?? 0;
     if (itemsCount > 0) {
@@ -688,188 +921,12 @@ export function BoardScreen() {
         ) : null}
 
         <Box className="flex-1 min-h-0">
-          <DraxProvider style={{ flex: 1 }}>
-            <DraxList
-              data={orderedColumns}
-              keyExtractor={(column) => column.id}
-              contentContainerStyle={{ paddingBottom: 32, paddingTop: 4 }}
-              longPressDelay={150}
-              reorderable={!readOnly}
-              showsVerticalScrollIndicator
-              scrollEnabled
-              nestedScrollEnabled
-              keyboardShouldPersistTaps="handled"
-              style={{ flex: 1 }}
-              parentDraxViewProps={{ style: { flex: 1 } }}
-              onItemReorder={({ fromIndex, toIndex }) => {
-                if (readOnly || fromIndex === toIndex) return;
-                setOrderedColumns((prev) => {
-                  const updated = [...prev];
-                  const [moved] = updated.splice(fromIndex, 1);
-                  updated.splice(toIndex, 0, moved);
-                  handleReorderLines(updated);
-                  return updated;
-                });
-              }}
-              renderItem={(info, itemProps) => {
-                const column = info.item;
-                const columnItems = itemsByColumn.get(column.id) ?? [];
-                const expanded = expandedLines.includes(column.id);
-                const countLabel =
-                  columnItems.length === 1
-                    ? t("boards.board.count_item")
-                    : t("boards.board.count_items");
-                const delay = Math.min((info.index ?? 0) * 40, 200);
-                                const motionProps = {
-                  initial: animationsEnabled ? { opacity: 0, y: 12 } : { opacity: 1, y: 0 },
-                  animate: { opacity: 1, y: 0 },
-                  transition: {
-                    type: "timing",
-            duration: animationsEnabled ? 420 : 0,
-                    delay: animationsEnabled ? delay : 0,
-                    easing: "easeOut",
-                  },
-                };
-                return (
-                  <DraxListItem
-                    itemProps={itemProps}
-                    draggable={!readOnly}
-                    style={{ marginBottom: 16 }}
-                    animateSnap={false}
-                    snapDelay={0}
-                    snapDuration={0}
-                    draggingStyle={{ opacity: 0 }}
-                    dragReleasedStyle={{ opacity: 1 }}
-                    hoverStyle={{ opacity: 1 }}
-                    hoverDraggingStyle={{ opacity: 1 }}
-                    hoverDragReleasedStyle={{ opacity: 0 }}
-                  >
-                    <MotionView {...motionProps}>
-                      <Box
-                        className="rounded-2xl border border-outline-200 bg-background-50 p-4"
-                      >
-                        <HStack className="items-center justify-between">
-                         <Pressable onPress={() => toggleLine(column.id)} style={{ flex: 1 }}>
-                        <VStack space="xs">
-                          <Text size="md" className="font-semibold text-typography-900">
-                            {column.title}
-                          </Text>
-                          <Text size="xs" className="text-typography-500">
-                            {columnItems.length} {countLabel}
-                          </Text>
-                        </VStack>
-                      </Pressable>
-                      <HStack space="xs" className="items-center">
-                        {!readOnly ? (
-                          <Pressable
-                            onPress={(event) => {
-                              event.stopPropagation?.();
-                              const { pageX, pageY } = event.nativeEvent;
-                              setOpenColumnMenuId((current) =>
-                                current === column.id ? null : column.id,
-                              );
-                              setColumnMenuAnchor({ x: pageX, y: pageY });
-                            }}
-                            hitSlop={8}
-                          >
-                            <Box className="rounded-full border border-outline-200 bg-background-0 p-2">
-                              <MoreVertical size={16} color="#475569" />
-    </Box>
-                          </Pressable>
-                        ) : null}
-                        <Pressable onPress={() => toggleLine(column.id)} hitSlop={8}>
-                          <Box className="rounded-full border border-outline-200 bg-background-0 p-2">
-                            {expanded ? (
-                              <ChevronUp size={16} color="#475569" />
-                            ) : (
-                              <ChevronDown size={16} color="#475569" />
-                            )}
-                          </Box>
-                        </Pressable>
-                      </HStack>
-                    </HStack>
-
-                    {expanded ? (
-                      <VStack space="sm" className="mt-3">
-                        {columnItems.length === 0 ? (
-                          <Text size="xs" className="text-typography-500">
-                            {t("boards.board.empty_column")}
-                          </Text>
-                        ) : null}
-
-                        {columnItems.map((task) => {
-                          const priorityMeta = getPriorityMeta(task.priority, t);
-                          const PriorityIcon = priorityMeta.Icon;
-
-                          return (
-                            <Box
-                              key={task.id}
-                              className="rounded-xl border border-outline-200 bg-background-0 p-3"
-                            >
-                              <VStack space="xs">
-                                <HStack className="items-start justify-between">
-                                  <Text size="sm" className="font-semibold text-typography-900 flex-1 pr-2">
-                                    {task.title}
-                                  </Text>
-                                  {!readOnly ? (
-                                    <Button
-                                      size="xs"
-                                      variant="link"
-                                      onPress={() => setEditingItem(task)}
-                                      accessibilityLabel={t("boards.board.edit_item_accessibility")}
-                                    >
-                                      <ButtonIcon as={Pencil} />
-                                    </Button>
-                                  ) : null}
-                                </HStack>
-                                {task.description ? (
-                                  <Text size="xs" className="text-typography-600">
-                                    {task.description}
-                                  </Text>
-                                ) : null}
-                                <HStack className="items-center justify-end pt-1 space-x-2">
-                                  {task.assignedTo ? (
-                                    task.assignedPhotoUrl ? (
-                                      <Image
-                                        source={{ uri: task.assignedPhotoUrl }}
-                                        className="h-5 w-5 rounded-full"
-                                      />
-                                    ) : (
-                                      <Box className="h-5 w-5 rounded-full bg-background-200 items-center justify-center">
-                                        <Text size="xs" className="text-typography-700">
-                                          {getInitials(task.assignedName ?? task.assignedTo)}
-                                        </Text>
-                                      </Box>
-                                    )
-                                  ) : null}
-                                  <Box>
-                                    <PriorityIcon size={14} color={priorityMeta.color} />
-                                  </Box>
-                                </HStack>
-                              </VStack>
-                            </Box>
-                          );
-                        })}
-
-                        {!readOnly ? (
-                          <Button
-                            size="xs"
-                            variant="outline"
-                            onPress={() => setCreatingItemFor(column.id)}
-                          >
-                            <ButtonIcon as={Plus} />
-                            <ButtonText>{t("boards.board.new_item")}</ButtonText>
-                          </Button>
-                        ) : null}
-                      </VStack>
-                    ) : null}
-                      </Box>
-                    </MotionView>
-                  </DraxListItem>
-                );
-              }}
-            />
-          </DraxProvider>
+          <DraxColumnsList
+            data={orderedColumns}
+            readOnly={readOnly}
+            renderItem={renderColumn}
+            onItemReorder={handleItemReorder}
+          />
         </Box>
       </VStack>
 

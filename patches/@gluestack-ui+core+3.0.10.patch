@@ -1,0 +1,60 @@
+diff --git a/node_modules/@gluestack-ui/core/lib/esm/popover/creator/OverlayAnimatePresence.jsx b/node_modules/@gluestack-ui/core/lib/esm/popover/creator/OverlayAnimatePresence.jsx
+--- a/node_modules/@gluestack-ui/core/lib/esm/popover/creator/OverlayAnimatePresence.jsx
++++ b/node_modules/@gluestack-ui/core/lib/esm/popover/creator/OverlayAnimatePresence.jsx
+@@
+-import { Animated } from 'react-native';
++import { Animated, Platform } from 'react-native';
+@@
+-    useNativeDriver: true,
++    useNativeDriver: Platform.OS !== 'web',
+@@
+-                        useNativeDriver: true,
++                        useNativeDriver: Platform.OS !== 'web',
+diff --git a/node_modules/@gluestack-ui/core/lib/esm/modal/creator/OverlayAnimatePresence.jsx b/node_modules/@gluestack-ui/core/lib/esm/modal/creator/OverlayAnimatePresence.jsx
+--- a/node_modules/@gluestack-ui/core/lib/esm/modal/creator/OverlayAnimatePresence.jsx
++++ b/node_modules/@gluestack-ui/core/lib/esm/modal/creator/OverlayAnimatePresence.jsx
+@@
+-import { Animated } from 'react-native';
++import { Animated, Platform } from 'react-native';
+@@
+-    useNativeDriver: true,
++    useNativeDriver: Platform.OS !== 'web',
+@@
+-                        useNativeDriver: true,
++                        useNativeDriver: Platform.OS !== 'web',
+diff --git a/node_modules/@gluestack-ui/core/lib/esm/toast/creator/OverlayAnimatePresence.jsx b/node_modules/@gluestack-ui/core/lib/esm/toast/creator/OverlayAnimatePresence.jsx
+--- a/node_modules/@gluestack-ui/core/lib/esm/toast/creator/OverlayAnimatePresence.jsx
++++ b/node_modules/@gluestack-ui/core/lib/esm/toast/creator/OverlayAnimatePresence.jsx
+@@
+-import { Animated } from 'react-native';
++import { Animated, Platform } from 'react-native';
+@@
+-    useNativeDriver: true,
++    useNativeDriver: Platform.OS !== 'web',
+@@
+-                        useNativeDriver: true,
++                        useNativeDriver: Platform.OS !== 'web',
+diff --git a/node_modules/@gluestack-ui/core/lib/esm/tooltip/creator/OverlayAnimatePresence.jsx b/node_modules/@gluestack-ui/core/lib/esm/tooltip/creator/OverlayAnimatePresence.jsx
+--- a/node_modules/@gluestack-ui/core/lib/esm/tooltip/creator/OverlayAnimatePresence.jsx
++++ b/node_modules/@gluestack-ui/core/lib/esm/tooltip/creator/OverlayAnimatePresence.jsx
+@@
+-import { Animated } from 'react-native';
++import { Animated, Platform } from 'react-native';
+@@
+-    useNativeDriver: true,
++    useNativeDriver: Platform.OS !== 'web',
+@@
+-                        useNativeDriver: true,
++                        useNativeDriver: Platform.OS !== 'web',
+diff --git a/node_modules/@gluestack-ui/core/lib/esm/menu/creator/MenuPopover/OverlayAnimatePresence.jsx b/node_modules/@gluestack-ui/core/lib/esm/menu/creator/MenuPopover/OverlayAnimatePresence.jsx
+--- a/node_modules/@gluestack-ui/core/lib/esm/menu/creator/MenuPopover/OverlayAnimatePresence.jsx
++++ b/node_modules/@gluestack-ui/core/lib/esm/menu/creator/MenuPopover/OverlayAnimatePresence.jsx
+@@
+-import { Animated } from 'react-native';
++import { Animated, Platform } from 'react-native';
+@@
+-    useNativeDriver: true,
++    useNativeDriver: Platform.OS !== 'web',
+@@
+-                        useNativeDriver: true,
++                        useNativeDriver: Platform.OS !== 'web',

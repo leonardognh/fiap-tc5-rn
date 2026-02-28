@@ -10,6 +10,7 @@ import {
   StyleProp,
   View,
   ViewStyle,
+  Platform,
 } from 'react-native';
 import {
   Motion,
@@ -21,6 +22,15 @@ type IMotionViewProps = React.ComponentProps<typeof View> &
   MotionComponentProps<typeof View, ViewStyle, unknown, unknown, unknown>;
 
 const MotionView = Motion.View as React.ComponentType<IMotionViewProps>;
+
+type PopoverFocusContextValue = {
+  setContentRef: (node: View | null) => void;
+  focusRequestId: number;
+};
+
+const PopoverFocusContext = React.createContext<PopoverFocusContextValue | null>(
+  null
+);
 
 const popoverContentStyle = tva({
   base: 'rounded-md bg-background-0 border border-outline-100 shadow-hard-5 overflow-hidden z-[2000]',
@@ -87,16 +97,84 @@ const Popover = React.forwardRef<
   React.ComponentRef<typeof UIPopover>,
   IPopoverProps
 >(function Popover({ className, ...props }, ref) {
+  const { onOpen, onClose, isOpen } = props;
+  const contentRef = React.useRef<View | null>(null);
+  const lastFocusedRef = React.useRef<HTMLElement | null>(null);
+  const wasOpenRef = React.useRef(false);
+  const [focusRequestId, setFocusRequestId] = React.useState(0);
+
+  const setContentRef = React.useCallback((node: View | null) => {
+    contentRef.current = node;
+  }, []);
+
+  const focusContent = React.useCallback(() => {
+    if (typeof document === 'undefined') return;
+    const active = document.activeElement as HTMLElement | null;
+    if (!lastFocusedRef.current && active) {
+      lastFocusedRef.current = active;
+    }
+    active?.blur?.();
+
+    setFocusRequestId((value) => value + 1);
+  }, []);
+
+  const restoreFocus = React.useCallback(() => {
+    if (typeof document === 'undefined') return;
+    const node = lastFocusedRef.current;
+    if (node?.focus) {
+      const focusNow = () => node.focus?.();
+      if (typeof requestAnimationFrame !== 'undefined') {
+        requestAnimationFrame(focusNow);
+      } else {
+        setTimeout(focusNow, 0);
+      }
+    }
+    lastFocusedRef.current = null;
+  }, []);
+
+  const handleOpen = React.useCallback(() => {
+    if (typeof document !== 'undefined') {
+      lastFocusedRef.current = document.activeElement as HTMLElement | null;
+    }
+    wasOpenRef.current = true;
+    onOpen?.();
+    focusContent();
+  }, [focusContent, onOpen]);
+
+  const handleClose = React.useCallback(() => {
+    onClose?.();
+    if (wasOpenRef.current) {
+      wasOpenRef.current = false;
+      restoreFocus();
+    }
+  }, [onClose, restoreFocus]);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      focusContent();
+      wasOpenRef.current = true;
+      return;
+    }
+    if (isOpen === false && wasOpenRef.current) {
+      wasOpenRef.current = false;
+      restoreFocus();
+    }
+  }, [focusContent, isOpen, restoreFocus]);
+
   const rootStyle = Array.isArray(props.style)
     ? [...props.style, { flex: 1 }]
     : [props.style, { flex: 1 }];
   return (
-    <UIPopover
-      ref={ref}
-      {...props}
-      className={className}
-      style={rootStyle}
-    />
+    <PopoverFocusContext.Provider value={{ setContentRef, focusRequestId }}>
+      <UIPopover
+        ref={ref}
+        {...props}
+        onOpen={handleOpen}
+        onClose={handleClose}
+        className={className}
+        style={rootStyle}
+      />
+    </PopoverFocusContext.Provider>
   );
 });
 
@@ -104,14 +182,41 @@ const PopoverContent = React.forwardRef<
   React.ComponentRef<typeof UIPopover.Content>,
   IPopoverContentProps
 >(function PopoverContent({ className, ...props }, ref) {
+  const focusContext = React.useContext(PopoverFocusContext);
+  const localRef = React.useRef<View | null>(null);
+  const setRefs = React.useCallback(
+    (node: React.ComponentRef<typeof UIPopover.Content> | null) => {
+      localRef.current = node as unknown as View | null;
+      if (typeof ref === 'function') {
+        ref(node);
+      } else if (ref) {
+        ref.current = node;
+      }
+      focusContext?.setContentRef(node as unknown as View | null);
+    },
+    [focusContext, ref]
+  );
+  React.useEffect(() => {
+    if (!focusContext?.focusRequestId) return;
+    const node = localRef.current as unknown as { focus?: () => void } | null;
+    if (node?.focus) {
+      const focusNow = () => node.focus?.();
+      if (typeof requestAnimationFrame !== 'undefined') {
+        requestAnimationFrame(focusNow);
+      } else {
+        setTimeout(focusNow, 0);
+      }
+    }
+  }, [focusContext?.focusRequestId]);
   const contentStyle = Array.isArray(props.style)
     ? [...props.style, { zIndex: 2000, elevation: 50 }]
     : [props.style, { zIndex: 2000, elevation: 50 }];
   return (
     <UIPopover.Content
-      ref={ref}
+      ref={setRefs}
       className={popoverContentStyle({ class: className })}
       style={contentStyle}
+      tabIndex={-1}
       {...props}
     />
   );
@@ -134,6 +239,7 @@ const PopoverBackdrop = React.forwardRef<
   React.ComponentRef<typeof UIPopover.Backdrop>,
   IPopoverBackdropProps
 >(function PopoverBackdrop({ className, ...props }, ref) {
+  const { onPress, onFocus, ...restProps } = props;
   const baseStyle = props.style as
     | StyleProp<ViewStyle>
     | ((state: PressableStateCallbackType) => StyleProp<ViewStyle>)
@@ -152,7 +258,22 @@ const PopoverBackdrop = React.forwardRef<
       ref={ref}
       className={popoverBackdropStyle({ class: className })}
       style={backdropStyle}
-      {...props}
+      tabIndex={Platform.OS === 'web' ? -1 : undefined}
+      focusable={Platform.OS === 'web' ? false : undefined}
+      accessible={Platform.OS === 'web' ? false : undefined}
+      onFocus={(event) => {
+        onFocus?.(event);
+        if (Platform.OS === 'web' && typeof document !== 'undefined') {
+          (document.activeElement as HTMLElement | null)?.blur?.();
+        }
+      }}
+      onPress={(event) => {
+        if (Platform.OS === 'web' && typeof document !== 'undefined') {
+          (document.activeElement as HTMLElement | null)?.blur?.();
+        }
+        onPress?.(event as any);
+      }}
+      {...restProps}
     />
   );
 });
