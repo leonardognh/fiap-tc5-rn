@@ -176,6 +176,15 @@ export function SettingsScreen() {
       },
     });
   };
+  const setToastAlerts = (enabled: boolean) => {
+    if (focusModeEnabled) return;
+    updatePreferences({
+      cognitiveAlerts: {
+        ...preferences.cognitiveAlerts,
+        enabled,
+      },
+    });
+  };
   const setFocusMode = (enabled: boolean) => {
     if (enabled) {
       updatePreferences({
@@ -633,6 +642,36 @@ export function SettingsScreen() {
           <Section title={t("settings.cognitive_alerts")}>
             <VStack space="xs">
               <Text size="sm" className="text-typography-600">
+                {t("settings.toast_alerts")}
+              </Text>
+              <Switch
+                value={
+                  focusModeEnabled
+                    ? false
+                    : preferences.cognitiveAlerts?.enabled ?? true
+                }
+                onValueChange={setToastAlerts}
+                disabled={focusModeEnabled}
+              />
+            </VStack>
+
+            <VStack space="xs">
+                          <Text size="sm" className="text-typography-600">
+                            {t("settings.pomodoro")}
+                          </Text>
+                          <Switch
+                            value={
+                              focusModeEnabled
+                                ? false
+                                : preferences.cognitiveAlerts?.pomodoroPause ?? true
+                            }
+                            onValueChange={setPomodoroPause}
+                            disabled={focusModeEnabled}
+                          />
+            </VStack>
+
+            <VStack space="xs">
+              <Text size="sm" className="text-typography-600">
                 {t("settings.transition_screen")}
               </Text>
               <Switch
@@ -646,20 +685,6 @@ export function SettingsScreen() {
               />
             </VStack>
 
-            <VStack space="xs">
-              <Text size="sm" className="text-typography-600">
-                {t("settings.pomodoro")}
-              </Text>
-              <Switch
-                value={
-                  focusModeEnabled
-                    ? false
-                    : preferences.cognitiveAlerts?.pomodoroPause ?? true
-                }
-                onValueChange={setPomodoroPause}
-                disabled={focusModeEnabled}
-              />
-            </VStack>
           </Section>
         </VStack>
       </ScrollView>

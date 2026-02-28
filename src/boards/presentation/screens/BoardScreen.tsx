@@ -105,6 +105,7 @@ export function BoardScreen() {
   const authUser = useAuthStore((s) => s.user);
   const preferences = useSettingsStore((s) => s.preferences);
   const toast = useToast();
+  const toastEnabled = preferences.cognitiveAlerts?.enabled ?? true;
   const [newColumnTitle, setNewColumnTitle] = useState("");
   const [editingColumn, setEditingColumn] = useState<BoardColumn | null>(null);
   const [creatingItemFor, setCreatingItemFor] = useState<string | null>(null);
@@ -123,25 +124,26 @@ export function BoardScreen() {
 
   const notStartedColumnIds = board?.notStartedColumnIds ?? [];
   const doneColumnIds = board?.doneColumnIds ?? [];
-
   const checkNotAllowedRules = useCallback(
     (fromColumnId: string, toColumnId: string) => {
       if (
         notStartedColumnIds.includes(fromColumnId) &&
         doneColumnIds.includes(toColumnId)
       ) {
-        toast.show({
-          placement: "top",
-          duration: 2500,
-          render: ({ id }) => (
-            <Toast nativeID={`toast-${id}`} action="info" variant="solid">
-              <ToastTitle>Movimento bloqueado</ToastTitle>
-              <ToastDescription>
-                Item não pode ser finalizado sem iniciar.
-              </ToastDescription>
-            </Toast>
-          ),
-        });
+        if (toastEnabled) {
+          toast.show({
+            placement: "top",
+            duration: 2500,
+            render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="info" variant="solid">
+                <ToastTitle>Movimento bloqueado</ToastTitle>
+                <ToastDescription>
+                  Item não pode ser finalizado sem iniciar.
+                </ToastDescription>
+              </Toast>
+            ),
+          });
+        }
         return true;
       }
 
@@ -149,18 +151,20 @@ export function BoardScreen() {
         !notStartedColumnIds.includes(fromColumnId) &&
         notStartedColumnIds.includes(toColumnId)
       ) {
-        toast.show({
-          placement: "top",
-          duration: 2500,
-          render: ({ id }) => (
-            <Toast nativeID={`toast-${id}`} action="info" variant="solid">
-              <ToastTitle>Movimento bloqueado</ToastTitle>
-              <ToastDescription>
-                Item não pode voltar para "não iniciadas".
-              </ToastDescription>
-            </Toast>
-          ),
-        });
+        if (toastEnabled) {
+          toast.show({
+            placement: "top",
+            duration: 2500,
+            render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="info" variant="solid">
+                <ToastTitle>Movimento bloqueado</ToastTitle>
+                <ToastDescription>
+                  Item não pode voltar para "não iniciadas".
+                </ToastDescription>
+              </Toast>
+            ),
+          });
+        }
         return true;
       }
 
@@ -168,24 +172,25 @@ export function BoardScreen() {
         doneColumnIds.includes(fromColumnId) &&
         !doneColumnIds.includes(toColumnId)
       ) {
-        toast.show({
-          placement: "top",
-          duration: 2500,
-          render: ({ id }) => (
-            <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-              <ToastTitle>Movimento bloqueado</ToastTitle>
-              <ToastDescription>Item já está concluído.</ToastDescription>
-            </Toast>
-          ),
-        });
+        if (toastEnabled) {
+          toast.show({
+            placement: "top",
+            duration: 2500,
+            render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+                <ToastTitle>Movimento bloqueado</ToastTitle>
+                <ToastDescription>Item já está concluído.</ToastDescription>
+              </Toast>
+            ),
+          });
+        }
         return true;
       }
 
       return false;
     },
-    [notStartedColumnIds, doneColumnIds, toast],
+    [notStartedColumnIds, doneColumnIds, toast, toastEnabled],
   );
-
   const checkStartedRules = useCallback(
     (fromColumnId: string, toColumnId: string) => {
       return (
@@ -580,18 +585,20 @@ export function BoardScreen() {
   const confirmDeleteColumn = (column: BoardColumn) => {
     const itemsCount = itemsByColumn.get(column.id)?.length ?? 0;
     if (itemsCount > 0) {
-      toast.show({
-        placement: "top",
-        duration: 3000,
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="warning" variant="solid">
-            <ToastTitle>Não é possível apagar</ToastTitle>
-            <ToastDescription>
-              Remova os itens desta classificação antes de apagá-la.
-            </ToastDescription>
-          </Toast>
-        ),
-      });
+      if (toastEnabled) {
+        toast.show({
+          placement: "top",
+          duration: 3000,
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="warning" variant="solid">
+              <ToastTitle>Não é possível apagar</ToastTitle>
+              <ToastDescription>
+                Remova os itens desta classificação antes de apagá-la.
+              </ToastDescription>
+            </Toast>
+          ),
+        });
+      }
       return;
     }
 
@@ -603,7 +610,6 @@ export function BoardScreen() {
       onConfirm: () => deleteColumn(column.id),
     });
   };
-
   const confirmDeleteItem = (item: BoardItem) => {
     setConfirmState({
       title: "Remover item",
@@ -708,7 +714,7 @@ export function BoardScreen() {
                   animate: { opacity: 1, y: 0 },
                   transition: {
                     type: "timing",
-                    duration: animationsEnabled ? 420 : 0,
+            duration: animationsEnabled ? 420 : 0,
                     delay: animationsEnabled ? delay : 0,
                     easing: "easeOut",
                   },

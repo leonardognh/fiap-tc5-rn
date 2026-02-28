@@ -37,8 +37,9 @@ export const resources = {
         focus_mode_help_5: "Mostra apenas os boards ativos",
         focus_mode_help_6: "Desativa filtros",
         cognitive_alerts: "Alertas cognitivos",
+        toast_alerts: "Ativar Alertas",
         transition_screen: "Transições suaves",
-        pomodoro: "Pomodoro",
+        pomodoro: "Ativar Pomodoro",
         language: "Idioma",
         themes: {
           light: "Claro",
@@ -113,8 +114,9 @@ export const resources = {
         focus_mode_help_5: "Locks animation and transition settings.",
         focus_mode_help_6: "Prioritizes the essential app experience.",
         cognitive_alerts: "Cognitive alerts",
+        toast_alerts: "Enable Alerts",
         transition_screen: "Smooth transitions",
-        pomodoro: "Pomodoro",
+        pomodoro: "Enable Pomodoro",
         language: "Language",
         themes: {
           light: "Light",
