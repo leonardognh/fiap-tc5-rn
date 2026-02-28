@@ -175,21 +175,25 @@ export function ItemFormModal({
               ) : null}
 
               {moveOptions ? (
-                <MenuSelect
-                  value={moveOptions.currentColumnId}
-                  onValueChange={(value) => {
-                    if (value === moveOptions.currentColumnId) return;
-                    moveOptions.onMove(value);
-                  }}
-                  options={moveOptions.columns.map((column) => ({
-                    value: column.id,
-                    label: column.title,
-                    isDisabled: column.id === moveOptions.currentColumnId,
-                  }))}
-                  isDisabled={moveOptions.disabled}
-                  placeholder="Mover para"
-                  size="sm"
-                />
+                <VStack space="sm">
+                  <Text size="sm" className="text-typography-600">
+                    Mover para
+                  </Text>
+                  <MenuSelect
+                    value={moveOptions.currentColumnId}
+                    onValueChange={(value) => {
+                      if (value === moveOptions.currentColumnId) return;
+                      moveOptions.onMove(value);
+                    }}
+                    options={moveOptions.columns.map((column) => ({
+                      value: column.id,
+                      label: column.title,
+                      isDisabled: column.id === moveOptions.currentColumnId,
+                    }))}
+                    isDisabled={moveOptions.disabled}
+                    size="sm"
+                  />
+                </VStack>
               ) : null}
             </VStack>
 

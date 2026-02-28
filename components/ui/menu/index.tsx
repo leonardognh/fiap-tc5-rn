@@ -1,9 +1,17 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { createMenu } from '@gluestack-ui/core/menu/creator';
 import { tva } from '@gluestack-ui/utils/nativewind-utils';
 import { cssInterop } from 'nativewind';
-import { Platform, Pressable, Text, View, ViewStyle } from 'react-native';
+import {
+  Platform,
+  Pressable,
+  PressableStateCallbackType,
+  StyleProp,
+  Text,
+  View,
+  ViewStyle,
+} from 'react-native';
 import {
   Motion,
   AnimatePresence,
@@ -11,7 +19,12 @@ import {
 } from '@legendapp/motion';
 import { ChevronDown } from 'lucide-react-native';
 import type { VariantProps } from '@gluestack-ui/utils/nativewind-utils';
-import type { Selection } from 'react-stately';
+import {
+  Popover,
+  PopoverBackdrop,
+  PopoverBody,
+  PopoverContent,
+} from '@/components/ui/popover';
 
 type IMotionViewProps = React.ComponentProps<typeof View> &
   MotionComponentProps<typeof View, ViewStyle, unknown, unknown, unknown>;
@@ -19,7 +32,7 @@ type IMotionViewProps = React.ComponentProps<typeof View> &
 const MotionView = Motion.View as React.ComponentType<IMotionViewProps>;
 
 const menuStyle = tva({
-  base: 'rounded-md bg-background-0 border border-outline-100 p-1 shadow-hard-5',
+  base: 'rounded-md bg-background-0 border border-outline-100 p-1 shadow-hard-5 z-[2000]',
 });
 
 const menuItemStyle = tva({
@@ -27,7 +40,7 @@ const menuItemStyle = tva({
 });
 
 const menuBackdropStyle = tva({
-  base: 'absolute top-0 bottom-0 left-0 right-0 web:cursor-default',
+  base: 'absolute top-0 bottom-0 left-0 right-0 web:cursor-default z-[1990]',
   // add this classnames if you want to give background color to backdrop
   // opacity-50 bg-background-500,
 });
@@ -82,12 +95,26 @@ const BackdropPressable = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof Pressable> &
     VariantProps<typeof menuBackdropStyle>
 >(function BackdropPressable({ className, ...props }, ref) {
+  const baseStyle = props.style as
+    | StyleProp<ViewStyle>
+    | ((state: PressableStateCallbackType) => StyleProp<ViewStyle>)
+    | undefined;
+  const backdropStyle =
+    typeof baseStyle === 'function'
+      ? (state: PressableStateCallbackType) => [
+          baseStyle(state),
+          { zIndex: 1990, elevation: 49 },
+        ]
+      : Array.isArray(baseStyle)
+        ? [...baseStyle, { zIndex: 1990, elevation: 49 }]
+        : [baseStyle, { zIndex: 1990, elevation: 49 }];
   return (
     <Pressable
       ref={ref}
       className={menuBackdropStyle({
         class: className,
       })}
+      style={backdropStyle}
       {...props}
     />
   );
@@ -245,25 +272,31 @@ const MenuSelect = ({
   className,
   error = false,
 }: MenuSelectProps) => {
-  const selectedOption = options.find((option) => option.value === value);
+  const [internalValue, setInternalValue] = useState<string | null | undefined>(
+    value
+  );
+  useEffect(() => {
+    setInternalValue(value);
+  }, [value]);
+
+  const selectedOption = options.find(
+    (option) => option.value === internalValue
+  );
   const displayLabel = selectedOption?.label ?? placeholder;
   const isPlaceholder = !selectedOption;
-  const selectedKeys = value ? new Set([value]) : new Set<string>();
-
-  const handleSelectionChange = (keys: Selection) => {
-    if (keys === 'all') return;
-    const [nextKey] = Array.from(keys);
-    if (nextKey === undefined) return;
-    onValueChange(String(nextKey));
-  };
+  const [open, setOpen] = useState(false);
 
   return (
-    <Menu
-      selectionMode="single"
-      selectedKeys={selectedKeys}
-      onSelectionChange={handleSelectionChange}
-      closeOnSelect
-      useRNModal={Platform.OS !== 'web'}
+    <Popover
+      isOpen={open}
+      onOpen={() => {
+        if (isDisabled) return;
+        setOpen(true);
+      }}
+      onClose={() => setOpen(false)}
+      placement="bottom left"
+      offset={6}
+      useRNModal
       trigger={(triggerProps) => (
         <Pressable
           {...triggerProps}
@@ -286,16 +319,29 @@ const MenuSelect = ({
         </Pressable>
       )}
     >
-      {options.map((option) => (
-        <MenuItem
-          key={option.value}
-          textValue={option.label}
-          disabled={option.isDisabled}
-        >
-          <MenuItemLabel>{option.label}</MenuItemLabel>
-        </MenuItem>
-      ))}
-    </Menu>
+      <PopoverBackdrop onPress={() => setOpen(false)} />
+      <PopoverContent>
+        <PopoverBody>
+          {options.map((option) => (
+            <Pressable
+              key={option.value}
+              disabled={option.isDisabled}
+              onPress={() => {
+                if (option.isDisabled) return;
+                setInternalValue(option.value);
+                onValueChange(option.value);
+                setOpen(false);
+              }}
+              className={menuItemStyle({
+                class: option.isDisabled ? 'opacity-40' : undefined,
+              })}
+            >
+              <MenuItemLabel>{option.label}</MenuItemLabel>
+            </Pressable>
+          ))}
+        </PopoverBody>
+      </PopoverContent>
+    </Popover>
   );
 };
 
