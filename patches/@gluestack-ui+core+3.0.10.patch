@@ -1,60 +1,266 @@
-diff --git a/node_modules/@gluestack-ui/core/lib/esm/popover/creator/OverlayAnimatePresence.jsx b/node_modules/@gluestack-ui/core/lib/esm/popover/creator/OverlayAnimatePresence.jsx
+﻿diff --git a/node_modules/@gluestack-ui/core/lib/esm/popover/creator/OverlayAnimatePresence.jsx b/node_modules/@gluestack-ui/core/lib/esm/popover/creator/OverlayAnimatePresence.jsx
+index fa48329..f00bf91 100644
 --- a/node_modules/@gluestack-ui/core/lib/esm/popover/creator/OverlayAnimatePresence.jsx
 +++ b/node_modules/@gluestack-ui/core/lib/esm/popover/creator/OverlayAnimatePresence.jsx
-@@
+@@ -1,9 +1,9 @@
+-﻿import React, { forwardRef } from 'react';
 -import { Animated } from 'react-native';
++import React, { forwardRef } from 'react';
 +import { Animated, Platform } from 'react-native';
-@@
+ import { ExitAnimationContext } from '../../overlay/creator';
+ const defaultTransitionConfig = {
+     type: 'timing',
 -    useNativeDriver: true,
 +    useNativeDriver: Platform.OS !== 'web',
-@@
+     duration: 0,
+     delay: 0,
+ };
+@@ -21,7 +21,7 @@ export const OverlayAnimatePresence = forwardRef(({ children, visible = false, A
+                 Animated.sequence([
+                     Animated[(_a = transition.type) !== null && _a !== void 0 ? _a : 'timing'](animateValue, {
+                         toValue: startAnimation,
 -                        useNativeDriver: true,
 +                        useNativeDriver: Platform.OS !== 'web',
+                     }),
+                 ]).start(() => {
+                     if (animationState === 'entering') {
+@@ -55,4 +55,3 @@ export const OverlayAnimatePresence = forwardRef(({ children, visible = false, A
+     return (<AnimatePresence ref={ref}>{visible ? children : null}</AnimatePresence>);
+ });
+ //# sourceMappingURL=OverlayAnimatePresence.jsx.map
+-
 diff --git a/node_modules/@gluestack-ui/core/lib/esm/modal/creator/OverlayAnimatePresence.jsx b/node_modules/@gluestack-ui/core/lib/esm/modal/creator/OverlayAnimatePresence.jsx
+index fa48329..f00bf91 100644
 --- a/node_modules/@gluestack-ui/core/lib/esm/modal/creator/OverlayAnimatePresence.jsx
 +++ b/node_modules/@gluestack-ui/core/lib/esm/modal/creator/OverlayAnimatePresence.jsx
-@@
+@@ -1,9 +1,9 @@
+-﻿import React, { forwardRef } from 'react';
 -import { Animated } from 'react-native';
++import React, { forwardRef } from 'react';
 +import { Animated, Platform } from 'react-native';
-@@
+ import { ExitAnimationContext } from '../../overlay/creator';
+ const defaultTransitionConfig = {
+     type: 'timing',
 -    useNativeDriver: true,
 +    useNativeDriver: Platform.OS !== 'web',
-@@
+     duration: 0,
+     delay: 0,
+ };
+@@ -21,7 +21,7 @@ export const OverlayAnimatePresence = forwardRef(({ children, visible = false, A
+                 Animated.sequence([
+                     Animated[(_a = transition.type) !== null && _a !== void 0 ? _a : 'timing'](animateValue, {
+                         toValue: startAnimation,
 -                        useNativeDriver: true,
 +                        useNativeDriver: Platform.OS !== 'web',
+                     }),
+                 ]).start(() => {
+                     if (animationState === 'entering') {
+@@ -55,4 +55,3 @@ export const OverlayAnimatePresence = forwardRef(({ children, visible = false, A
+     return (<AnimatePresence ref={ref}>{visible ? children : null}</AnimatePresence>);
+ });
+ //# sourceMappingURL=OverlayAnimatePresence.jsx.map
+-
 diff --git a/node_modules/@gluestack-ui/core/lib/esm/toast/creator/OverlayAnimatePresence.jsx b/node_modules/@gluestack-ui/core/lib/esm/toast/creator/OverlayAnimatePresence.jsx
+index 55b4f01..eac814d 100644
 --- a/node_modules/@gluestack-ui/core/lib/esm/toast/creator/OverlayAnimatePresence.jsx
 +++ b/node_modules/@gluestack-ui/core/lib/esm/toast/creator/OverlayAnimatePresence.jsx
-@@
+@@ -1,9 +1,9 @@
+-﻿import { ExitAnimationContext } from '../../overlay/creator';
++import { ExitAnimationContext } from '../../overlay/creator';
+ import React, { forwardRef } from 'react';
 -import { Animated } from 'react-native';
 +import { Animated, Platform } from 'react-native';
-@@
+ const defaultTransitionConfig = {
+     type: 'timing',
 -    useNativeDriver: true,
 +    useNativeDriver: Platform.OS !== 'web',
-@@
+     duration: 0,
+     delay: 0,
+ };
+@@ -21,7 +21,7 @@ export const OverlayAnimatePresence = forwardRef(({ children, visible = false, A
+                 Animated.sequence([
+                     Animated[(_a = transition.type) !== null && _a !== void 0 ? _a : 'timing'](animateValue, {
+                         toValue: startAnimation,
 -                        useNativeDriver: true,
 +                        useNativeDriver: Platform.OS !== 'web',
+                     }),
+                 ]).start(() => {
+                     if (animationState === 'entering') {
+@@ -56,4 +56,3 @@ export const OverlayAnimatePresence = forwardRef(({ children, visible = false, A
+     return (<AnimatePresence ref={ref}>{visible ? children : null}</AnimatePresence>);
+ });
+ //# sourceMappingURL=OverlayAnimatePresence.jsx.map
+-
 diff --git a/node_modules/@gluestack-ui/core/lib/esm/tooltip/creator/OverlayAnimatePresence.jsx b/node_modules/@gluestack-ui/core/lib/esm/tooltip/creator/OverlayAnimatePresence.jsx
+index fa48329..f00bf91 100644
 --- a/node_modules/@gluestack-ui/core/lib/esm/tooltip/creator/OverlayAnimatePresence.jsx
 +++ b/node_modules/@gluestack-ui/core/lib/esm/tooltip/creator/OverlayAnimatePresence.jsx
-@@
+@@ -1,9 +1,9 @@
+-﻿import React, { forwardRef } from 'react';
 -import { Animated } from 'react-native';
++import React, { forwardRef } from 'react';
 +import { Animated, Platform } from 'react-native';
-@@
+ import { ExitAnimationContext } from '../../overlay/creator';
+ const defaultTransitionConfig = {
+     type: 'timing',
 -    useNativeDriver: true,
 +    useNativeDriver: Platform.OS !== 'web',
-@@
+     duration: 0,
+     delay: 0,
+ };
+@@ -21,7 +21,7 @@ export const OverlayAnimatePresence = forwardRef(({ children, visible = false, A
+                 Animated.sequence([
+                     Animated[(_a = transition.type) !== null && _a !== void 0 ? _a : 'timing'](animateValue, {
+                         toValue: startAnimation,
 -                        useNativeDriver: true,
 +                        useNativeDriver: Platform.OS !== 'web',
+                     }),
+                 ]).start(() => {
+                     if (animationState === 'entering') {
+@@ -55,4 +55,3 @@ export const OverlayAnimatePresence = forwardRef(({ children, visible = false, A
+     return (<AnimatePresence ref={ref}>{visible ? children : null}</AnimatePresence>);
+ });
+ //# sourceMappingURL=OverlayAnimatePresence.jsx.map
+-
 diff --git a/node_modules/@gluestack-ui/core/lib/esm/menu/creator/MenuPopover/OverlayAnimatePresence.jsx b/node_modules/@gluestack-ui/core/lib/esm/menu/creator/MenuPopover/OverlayAnimatePresence.jsx
+index 545444a..afde10e 100644
 --- a/node_modules/@gluestack-ui/core/lib/esm/menu/creator/MenuPopover/OverlayAnimatePresence.jsx
 +++ b/node_modules/@gluestack-ui/core/lib/esm/menu/creator/MenuPopover/OverlayAnimatePresence.jsx
-@@
+@@ -1,9 +1,9 @@
+-﻿import React, { forwardRef } from 'react';
 -import { Animated } from 'react-native';
++import React, { forwardRef } from 'react';
 +import { Animated, Platform } from 'react-native';
-@@
+ import { ExitAnimationContext } from '../../../overlay/creator';
+ const defaultTransitionConfig = {
+     type: 'timing',
 -    useNativeDriver: true,
 +    useNativeDriver: Platform.OS !== 'web',
-@@
+     duration: 0,
+     delay: 0,
+ };
+@@ -21,7 +21,7 @@ export const OverlayAnimatePresence = forwardRef(({ children, visible = false, A
+                 Animated.sequence([
+                     Animated[(_a = transition.type) !== null && _a !== void 0 ? _a : 'timing'](animateValue, {
+                         toValue: startAnimation,
 -                        useNativeDriver: true,
 +                        useNativeDriver: Platform.OS !== 'web',
+                     }),
+                 ]).start(() => {
+                     if (animationState === 'entering') {
+@@ -55,4 +55,3 @@ export const OverlayAnimatePresence = forwardRef(({ children, visible = false, A
+     return (<AnimatePresence ref={ref}>{visible ? children : null}</AnimatePresence>);
+ });
+ //# sourceMappingURL=OverlayAnimatePresence.jsx.map
+-
+diff --git a/node_modules/@gluestack-ui/core/lib/esm/alert-dialog/creator/OverlayAnimatePresence.jsx b/node_modules/@gluestack-ui/core/lib/esm/alert-dialog/creator/OverlayAnimatePresence.jsx
+index fa48329..f00bf91 100644
+--- a/node_modules/@gluestack-ui/core/lib/esm/alert-dialog/creator/OverlayAnimatePresence.jsx
++++ b/node_modules/@gluestack-ui/core/lib/esm/alert-dialog/creator/OverlayAnimatePresence.jsx
+@@ -1,9 +1,9 @@
+-﻿import React, { forwardRef } from 'react';
+-import { Animated } from 'react-native';
++import React, { forwardRef } from 'react';
++import { Animated, Platform } from 'react-native';
+ import { ExitAnimationContext } from '../../overlay/creator';
+ const defaultTransitionConfig = {
+     type: 'timing',
+-    useNativeDriver: true,
++    useNativeDriver: Platform.OS !== 'web',
+     duration: 0,
+     delay: 0,
+ };
+@@ -21,7 +21,7 @@ export const OverlayAnimatePresence = forwardRef(({ children, visible = false, A
+                 Animated.sequence([
+                     Animated[(_a = transition.type) !== null && _a !== void 0 ? _a : 'timing'](animateValue, {
+                         toValue: startAnimation,
+-                        useNativeDriver: true,
++                        useNativeDriver: Platform.OS !== 'web',
+                     }),
+                 ]).start(() => {
+                     if (animationState === 'entering') {
+@@ -55,4 +55,3 @@ export const OverlayAnimatePresence = forwardRef(({ children, visible = false, A
+     return (<AnimatePresence ref={ref}>{visible ? children : null}</AnimatePresence>);
+ });
+ //# sourceMappingURL=OverlayAnimatePresence.jsx.map
+-
+diff --git a/node_modules/@gluestack-ui/core/lib/esm/actionsheet/creator/OverlayAnimatePresence.jsx b/node_modules/@gluestack-ui/core/lib/esm/actionsheet/creator/OverlayAnimatePresence.jsx
+index 3707a4b..fe0ebc3 100644
+--- a/node_modules/@gluestack-ui/core/lib/esm/actionsheet/creator/OverlayAnimatePresence.jsx
++++ b/node_modules/@gluestack-ui/core/lib/esm/actionsheet/creator/OverlayAnimatePresence.jsx
+@@ -1,9 +1,9 @@
+-﻿import React, { forwardRef } from 'react';
+-import { Animated } from 'react-native';
++import React, { forwardRef } from 'react';
++import { Animated, Platform } from 'react-native';
+ import { ExitAnimationContext } from '../../overlay/creator';
+ const defaultTransitionConfig = {
+     type: 'timing',
+-    useNativeDriver: true,
++    useNativeDriver: Platform.OS !== 'web',
+     duration: 200,
+     delay: 0,
+ };
+@@ -21,7 +21,7 @@ export const OverlayAnimatePresence = forwardRef(({ children, visible = false, A
+                 Animated.sequence([
+                     Animated[(_a = transition.type) !== null && _a !== void 0 ? _a : 'timing'](animateValue, {
+                         toValue: startAnimation,
+-                        useNativeDriver: true,
++                        useNativeDriver: Platform.OS !== 'web',
+                     }),
+                 ]).start(() => {
+                     if (animationState === 'entering') {
+@@ -57,4 +57,3 @@ export const OverlayAnimatePresence = forwardRef(({ children, visible = false, A
+       </AnimatePresence>);
+ });
+ //# sourceMappingURL=OverlayAnimatePresence.jsx.map
+-
+diff --git a/node_modules/@gluestack-ui/core/lib/esm/actionsheet/creator/ActionsheetDragIndicatorWrapper.jsx b/node_modules/@gluestack-ui/core/lib/esm/actionsheet/creator/ActionsheetDragIndicatorWrapper.jsx
+index e5ea4f3..befec90 100644
+--- a/node_modules/@gluestack-ui/core/lib/esm/actionsheet/creator/ActionsheetDragIndicatorWrapper.jsx
++++ b/node_modules/@gluestack-ui/core/lib/esm/actionsheet/creator/ActionsheetDragIndicatorWrapper.jsx
+@@ -1,4 +1,4 @@
+-﻿import React, { forwardRef } from 'react';
++import React, { forwardRef } from 'react';
+ import { Animated, Dimensions, PanResponder, Platform } from 'react-native';
+ import { mergeRefs } from '@gluestack-ui/utils/common';
+ import { useActionsheetContent } from './ActionsheetContentContext';
+@@ -26,14 +26,14 @@ export function ActionsheetDragIndicatorWrapper(StyledActionsheetDragIndicatorWr
+                         Animated.timing(pan, {
+                             toValue: { x: 0, y: contentSheetHeight.current },
+                             duration: 200,
+-                            useNativeDriver: true,
++                            useNativeDriver: Platform.OS !== 'web',
+                         }).start(handleClose);
+                     }
+                     else {
+                         Animated.spring(pan, {
+                             toValue: { x: 0, y: 0 },
+                             overshootClamping: true,
+-                            useNativeDriver: true,
++                            useNativeDriver: Platform.OS !== 'web',
+                         }).start();
+                     }
+                 }
+@@ -44,14 +44,14 @@ export function ActionsheetDragIndicatorWrapper(StyledActionsheetDragIndicatorWr
+                         Animated.timing(pan, {
+                             toValue: { x: 0, y: contentSheetHeightWithSnapPoint },
+                             duration: 200,
+-                            useNativeDriver: true,
++                            useNativeDriver: Platform.OS !== 'web',
+                         }).start(handleClose);
+                     }
+                     else {
+                         Animated.spring(pan, {
+                             toValue: { x: 0, y: 0 },
+                             overshootClamping: true,
+-                            useNativeDriver: true,
++                            useNativeDriver: Platform.OS !== 'web',
+                         }).start();
+                     }
+                 }
+@@ -62,4 +62,3 @@ export function ActionsheetDragIndicatorWrapper(StyledActionsheetDragIndicatorWr
+     });
+ }
+ //# sourceMappingURL=ActionsheetDragIndicatorWrapper.jsx.map
+-

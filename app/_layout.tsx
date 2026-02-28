@@ -15,7 +15,7 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useColorScheme } from "react-native";
+import { Platform, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 SplashScreen.preventAutoHideAsync();
@@ -73,6 +73,14 @@ function RootLayoutNav() {
     if (!user && inApp) router.replace("/login");
     else if (user && inAuth) router.replace("/(app)/(tabs)");
   }, [user, initializing, segments, router]);
+
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    const active = document.activeElement as HTMLElement | null;
+    if (active && typeof active.blur === "function") {
+      active.blur();
+    }
+  }, [segments]);
 
   const themeMode = preferences?.theme ?? "system";
   const resolvedTheme =
