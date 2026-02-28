@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable } from "react-native";
 import { useTranslation } from "react-i18next";
-import { ChevronDown } from "lucide-react-native";
 
 import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";
@@ -10,19 +9,7 @@ import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Input, InputField } from "@/components/ui/input";
-import {
-  Select,
-  SelectBackdrop,
-  SelectContent,
-  SelectDragIndicator,
-  SelectDragIndicatorWrapper,
-  SelectIcon,
-  SelectInput,
-  SelectItem,
-  SelectPortal,
-  SelectScrollView,
-  SelectTrigger,
-} from "@/components/ui/select";
+import { MenuSelect } from "@/components/ui/menu";
 import { Switch } from "@/components/ui/switch";
 
 import type { BoardColumn, PomodoroConfig } from "../../types/boards";
@@ -44,6 +31,9 @@ type PomodoroSettingsModalProps = {
   onClose: () => void;
   onSave: (input: PomodoroModalInput) => void;
 };
+
+const toColumnOptions = (items: BoardColumn[]) =>
+  items.map((column) => ({ value: column.id, label: column.title }));
 
 const toNumberOrNull = (value: string) => {
   const trimmed = value.trim();
@@ -128,9 +118,6 @@ export function PomodoroSettingsModal({
     if (current) blockedSet.delete(current);
     return columns.filter((c) => !blockedSet.has(c.id));
   };
-
-  const getColumnTitle = (id: string | null) =>
-    columns.find((column) => column.id === id)?.title;
 
   const pauseOptions = useMemo(
     () =>
@@ -220,43 +207,16 @@ export function PomodoroSettingsModal({
                 <Text size="sm" className="text-typography-600">
                   {t("boards.pomodoro.applyOnColumn")}
                 </Text>
-                <Select
+                <MenuSelect
                   key={`apply-${applyOnColumnId ?? "none"}`}
-                  selectedValue={applyOnColumnId ?? undefined}
-                  initialLabel={
-                    applyOnColumnId ? getColumnTitle(applyOnColumnId) : undefined
-                  }
+                  value={applyOnColumnId}
                   onValueChange={(value) => setApplyOnColumnId(value)}
+                  options={toColumnOptions(columns)}
+                  placeholder={t("boards.pomodoro.selectLine")}
                   isDisabled={!isActive}
-                >
-                  <SelectTrigger
-                    variant="outline"
-                    size="md"
-                    className={`rounded-xl ${
-                      applyError ? "border-error-500" : "border-outline-300"
-                    }`}
-                  >
-                    <SelectInput placeholder={t("boards.pomodoro.selectLine")} />
-                    <SelectIcon as={ChevronDown} className="mr-2 text-typography-500" />
-                  </SelectTrigger>
-                  <SelectPortal>
-                    <SelectBackdrop />
-                    <SelectContent>
-                      <SelectDragIndicatorWrapper>
-                        <SelectDragIndicator />
-                      </SelectDragIndicatorWrapper>
-                      <SelectScrollView className="max-h-[320px]">
-                        {columns.map((column) => (
-                          <SelectItem
-                            key={column.id}
-                            label={column.title}
-                            value={column.id}
-                          />
-                        ))}
-                      </SelectScrollView>
-                    </SelectContent>
-                  </SelectPortal>
-                </Select>
+                  error={applyError}
+                  size="md"
+                />
                 {applyError ? (
                   <Text size="xs" className="text-error-600">
                     {t("boards.pomodoro.selectBaseColumnError")}
@@ -323,147 +283,60 @@ export function PomodoroSettingsModal({
                   <Text size="sm" className="text-typography-600">
                     {t("boards.pomodoro.moveOnPause")}
                   </Text>
-                  <Select
+                  <MenuSelect
                     key={`pause-${moveOnPauseColumnId ?? "none"}`}
-                    selectedValue={moveOnPauseColumnId ?? noneValue}
-                    initialLabel={
-                      moveOnPauseColumnId
-                        ? getColumnTitle(moveOnPauseColumnId)
-                        : t("boards.pomodoro.none")
-                    }
+                    value={moveOnPauseColumnId ?? noneValue}
                     onValueChange={(value) =>
                       handleMoveChange(value, setMoveOnPauseColumnId)
                     }
+                    options={[
+                      { label: t("boards.pomodoro.none"), value: noneValue },
+                      ...toColumnOptions(pauseOptions),
+                    ]}
+                    placeholder={t("boards.pomodoro.none")}
                     isDisabled={!isActive}
-                  >
-                    <SelectTrigger
-                      variant="outline"
-                      size="md"
-                      className="rounded-xl border-outline-300"
-                    >
-                      <SelectInput placeholder={t("boards.pomodoro.none")} />
-                      <SelectIcon as={ChevronDown} className="mr-2 text-typography-500" />
-                    </SelectTrigger>
-                    <SelectPortal>
-                      <SelectBackdrop />
-                      <SelectContent>
-                        <SelectDragIndicatorWrapper>
-                          <SelectDragIndicator />
-                        </SelectDragIndicatorWrapper>
-                        <SelectScrollView className="max-h-[320px]">
-                          <SelectItem
-                            label={t("boards.pomodoro.none")}
-                            value={noneValue}
-                          />
-                          {pauseOptions.map((column) => (
-                            <SelectItem
-                              key={column.id}
-                              label={column.title}
-                              value={column.id}
-                            />
-                          ))}
-                        </SelectScrollView>
-                      </SelectContent>
-                    </SelectPortal>
-                  </Select>
+                    size="md"
+                  />
                 </VStack>
 
                 <VStack space="xs">
                   <Text size="sm" className="text-typography-600">
                     {t("boards.pomodoro.moveOnResume")}
                   </Text>
-                  <Select
+                  <MenuSelect
                     key={`resume-${moveOnResumeColumnId ?? "none"}`}
-                    selectedValue={moveOnResumeColumnId ?? noneValue}
-                    initialLabel={
-                      moveOnResumeColumnId
-                        ? getColumnTitle(moveOnResumeColumnId)
-                        : t("boards.pomodoro.none")
-                    }
+                    value={moveOnResumeColumnId ?? noneValue}
                     onValueChange={(value) =>
                       handleMoveChange(value, setMoveOnResumeColumnId)
                     }
+                    options={[
+                      { label: t("boards.pomodoro.none"), value: noneValue },
+                      ...toColumnOptions(resumeOptions),
+                    ]}
+                    placeholder={t("boards.pomodoro.none")}
                     isDisabled={!isActive}
-                  >
-                    <SelectTrigger
-                      variant="outline"
-                      size="md"
-                      className="rounded-xl border-outline-300"
-                    >
-                      <SelectInput placeholder={t("boards.pomodoro.none")} />
-                      <SelectIcon as={ChevronDown} className="mr-2 text-typography-500" />
-                    </SelectTrigger>
-                    <SelectPortal>
-                      <SelectBackdrop />
-                      <SelectContent>
-                        <SelectDragIndicatorWrapper>
-                          <SelectDragIndicator />
-                        </SelectDragIndicatorWrapper>
-                        <SelectScrollView className="max-h-[320px]">
-                          <SelectItem
-                            label={t("boards.pomodoro.none")}
-                            value={noneValue}
-                          />
-                          {resumeOptions.map((column) => (
-                            <SelectItem
-                              key={column.id}
-                              label={column.title}
-                              value={column.id}
-                            />
-                          ))}
-                        </SelectScrollView>
-                      </SelectContent>
-                    </SelectPortal>
-                  </Select>
+                    size="md"
+                  />
                 </VStack>
 
                 <VStack space="xs">
                   <Text size="sm" className="text-typography-600">
                     {t("boards.pomodoro.moveOnComplete")}
                   </Text>
-                  <Select
+                  <MenuSelect
                     key={`complete-${moveOnCompleteColumnId ?? "none"}`}
-                    selectedValue={moveOnCompleteColumnId ?? noneValue}
-                    initialLabel={
-                      moveOnCompleteColumnId
-                        ? getColumnTitle(moveOnCompleteColumnId)
-                        : t("boards.pomodoro.none")
-                    }
+                    value={moveOnCompleteColumnId ?? noneValue}
                     onValueChange={(value) =>
                       handleMoveChange(value, setMoveOnCompleteColumnId)
                     }
+                    options={[
+                      { label: t("boards.pomodoro.none"), value: noneValue },
+                      ...toColumnOptions(completeOptions),
+                    ]}
+                    placeholder={t("boards.pomodoro.none")}
                     isDisabled={!isActive}
-                  >
-                    <SelectTrigger
-                      variant="outline"
-                      size="md"
-                      className="rounded-xl border-outline-300"
-                    >
-                      <SelectInput placeholder={t("boards.pomodoro.none")} />
-                      <SelectIcon as={ChevronDown} className="mr-2 text-typography-500" />
-                    </SelectTrigger>
-                    <SelectPortal>
-                      <SelectBackdrop />
-                      <SelectContent>
-                        <SelectDragIndicatorWrapper>
-                          <SelectDragIndicator />
-                        </SelectDragIndicatorWrapper>
-                        <SelectScrollView className="max-h-[320px]">
-                          <SelectItem
-                            label={t("boards.pomodoro.none")}
-                            value={noneValue}
-                          />
-                          {completeOptions.map((column) => (
-                            <SelectItem
-                              key={column.id}
-                              label={column.title}
-                              value={column.id}
-                            />
-                          ))}
-                        </SelectScrollView>
-                      </SelectContent>
-                    </SelectPortal>
-                  </Select>
+                    size="md"
+                  />
                 </VStack>
               </VStack>
             </VStack>

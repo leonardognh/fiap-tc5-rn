@@ -7,6 +7,12 @@ import { HStack } from "@/components/ui/hstack";
 import { VStack } from "@/components/ui/vstack";
 import { Text } from "@/components/ui/text";
 import { Input, InputField, InputIcon, InputSlot } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverBackdrop,
+  PopoverBody,
+  PopoverContent,
+} from "@/components/ui/popover";
 
 import { createTag, searchTags } from "../../data/tags.repository";
 import type { Tag } from "../../types/boards";
@@ -120,151 +126,164 @@ export function TagsMultiSelect({
       <Text size="sm" className="text-typography-600">
         Tags
       </Text>
-      <Pressable
-        onPress={() => {
+      <Popover
+        isOpen={open}
+        onOpen={() => {
           if (disabled) return;
-          setOpen((prev) => !prev);
+          setOpen(true);
         }}
-      >
-        <Box className="rounded-xl border border-outline-300 bg-background-0 px-3 py-2 min-h-[52px]">
-          <HStack space="xs" className="items-center justify-between">
-            <HStack space="xs" className="flex-1 flex-wrap items-center">
-              {value.length === 0 ? (
-                <Text size="xs" className="text-typography-400">
-                  Selecione...
-                </Text>
-              ) : (
-                <>
-                  {visibleSelected.map((tag) => (
-                    <Pressable
-                      key={tag.id}
-                      onPress={(event) => {
-                        event.stopPropagation?.();
-                        if (disabled) return;
-                        removeTag(tag.id);
-                      }}
-                    >
-                      <Box className="rounded-full border border-outline-200 px-2 py-1">
-                        <HStack space="xs" className="items-center">
-                          <Text size="xs" className="text-typography-600">
-                            {tag.name}
-                          </Text>
-                          {!disabled ? (
-                            <Text size="xs" className="text-typography-400">
-                              ×
-                            </Text>
-                          ) : null}
-                        </HStack>
-                      </Box>
-                    </Pressable>
-                  ))}
-                  {remainingCount > 0 ? (
-                    <Box className="rounded-full border border-outline-200 px-2 py-1">
-                      <Text size="xs" className="text-typography-600">
-                        +{remainingCount}
-                      </Text>
-                    </Box>
-                  ) : null}
-                </>
-              )}
-            </HStack>
-            <ChevronDown size={16} color="#64748b" />
-          </HStack>
-        </Box>
-      </Pressable>
-
-      {open ? (
-        <Box className="rounded-xl border border-outline-200 bg-background-0 overflow-hidden">
-          <Box className="border-b border-outline-200 p-3">
-            <Input className="border-outline-300 rounded-xl">
-              <InputSlot className="pl-3">
-                <InputIcon as={Search} />
-              </InputSlot>
-              <InputField
-                placeholder="Pesquise ou adicione tags..."
-                value={search}
-                onChangeText={setSearch}
-                editable={!disabled}
-              />
-            </Input>
-          </Box>
-
-          <ScrollView
-            className="max-h-[260px]"
-            keyboardShouldPersistTaps="handled"
+        onClose={() => setOpen(false)}
+        placement="bottom left"
+        offset={6}
+        useRNModal
+        trigger={(triggerProps) => (
+          <Pressable
+            {...triggerProps}
+            disabled={disabled}
+            className={`rounded-xl border bg-background-0 px-3 ${
+              disabled ? "opacity-40" : ""
+            } border-outline-300 min-h-[40px]`}
           >
-            <VStack space="sm" className="p-3">
-              {error ? (
-                <Text size="xs" className="text-error-600">
-                  {error}
-                </Text>
-              ) : null}
-
-              {loading ? (
-                <Text size="xs" className="text-typography-500">
-                  Carregando...
-                </Text>
-              ) : null}
-
-              {availableOptions.length > 0 ? (
-                <VStack space="xs">
-                  <Text size="xs" className="text-typography-500">
-                    Tags disponíveis
-                  </Text>
-                  {availableOptions.map((tag) => (
-                    <Pressable
-                      key={tag.id}
-                      onPress={() => addTag(tag)}
-                      className="rounded-lg px-3 py-2 hover:bg-background-50 active:bg-background-100"
-                    >
-                      <Text size="sm" className="text-typography-800">
-                        {tag.name}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </VStack>
-              ) : !showAdd && !loading ? (
-                <Text size="xs" className="text-typography-500">
-                  Nenhuma tag encontrada.
-                </Text>
-              ) : null}
-
-              {showAdd ? (
-                <Pressable
-                  onPress={handleCreate}
-                  disabled={loading}
-                  className="rounded-lg px-3 py-2 hover:bg-background-50 active:bg-background-100"
-                >
-                  <HStack space="sm" className="items-center">
-                    <Plus size={16} color="#64748b" />
-                    <Text size="sm" className="text-typography-800">
-                      Adicionar "{searchValue}"
+            <Box className="py-2">
+              <HStack space="xs" className="items-center justify-between">
+                <HStack space="xs" className="flex-1 flex-wrap items-center">
+                  {value.length === 0 ? (
+                    <Text size="xs" className="text-typography-400">
+                      Selecione...
                     </Text>
-                  </HStack>
-                </Pressable>
-              ) : null}
+                  ) : (
+                    <>
+                      {visibleSelected.map((tag) => (
+                        <Pressable
+                          key={tag.id}
+                          onPress={(event) => {
+                            event.stopPropagation?.();
+                            if (disabled) return;
+                            removeTag(tag.id);
+                          }}
+                        >
+                          <Box className="rounded-full border border-outline-200 px-2 py-1">
+                            <HStack space="xs" className="items-center">
+                              <Text size="xs" className="text-typography-600">
+                                {tag.name}
+                              </Text>
+                              {!disabled ? (
+                                <X size={12} color="#64748b" />
+                              ) : null}
+                            </HStack>
+                          </Box>
+                        </Pressable>
+                      ))}
+                      {remainingCount > 0 ? (
+                        <Box className="rounded-full border border-outline-200 px-2 py-1">
+                          <Text size="xs" className="text-typography-600">
+                            +{remainingCount}
+                          </Text>
+                        </Box>
+                      ) : null}
+                    </>
+                  )}
+                </HStack>
+                <ChevronDown size={18} color="#64748b" />
+              </HStack>
+            </Box>
+          </Pressable>
+        )}
+      >
+        <PopoverBackdrop onPress={() => setOpen(false)} />
+        <PopoverContent>
+          <PopoverBody>
+            <Box className="border-b border-outline-200 p-3">
+              <Input className="border-outline-300 rounded-xl">
+                <InputSlot className="pl-3">
+                  <InputIcon as={Search} />
+                </InputSlot>
+                <InputField
+                  placeholder="Pesquise ou adicione tags..."
+                  value={search}
+                  onChangeText={setSearch}
+                  editable={!disabled}
+                />
+              </Input>
+            </Box>
 
-              {value.length > 0 ? (
-                <VStack space="xs">
-                  <Text size="xs" className="text-typography-500">
-                    Selecionadas (clique para remover)
+            <ScrollView
+              className="max-h-[260px]"
+              keyboardShouldPersistTaps="handled"
+            >
+              <VStack space="sm" className="p-2">
+                {error ? (
+                  <Text size="xs" className="text-error-600">
+                    {error}
                   </Text>
-                  {value.map((tag) => (
-                    <Pressable key={tag.id} onPress={() => removeTag(tag.id)}>
-                      <HStack space="sm" className="items-center">
-                        <X size={14} color="#64748b" />
+                ) : null}
+
+                {loading ? (
+                  <Text size="xs" className="text-typography-500">
+                    Carregando...
+                  </Text>
+                ) : null}
+
+                {availableOptions.length > 0 ? (
+                  <VStack space="xs">
+                    <Text size="xs" className="text-typography-500">
+                     Tags disponíveis
+                    </Text>
+                    {availableOptions.map((tag) => (
+                      <Pressable
+                        key={tag.id}
+                        onPress={() => addTag(tag)}
+                        className="min-w-[200px] rounded px-3 py-2 data-[hover=true]:bg-background-50 data-[active=true]:bg-background-100"
+                      >
                         <Text size="sm" className="text-typography-800">
                           {tag.name}
                         </Text>
-                      </HStack>
-                    </Pressable>
-                  ))}
-                </VStack>
-              ) : null}
-            </VStack>
-          </ScrollView>
-        </Box>
-      ) : null}
+                      </Pressable>
+                    ))}
+                  </VStack>
+                ) : !showAdd && !loading ? (
+                  <Text size="xs" className="text-typography-500">
+                    Nenhuma tag encontrada.
+                  </Text>
+                ) : null}
+
+                {showAdd ? (
+                  <Pressable
+                    onPress={handleCreate}
+                    disabled={loading}
+                    className="min-w-[200px] rounded px-3 py-2 data-[hover=true]:bg-background-50 data-[active=true]:bg-background-100"
+                  >
+                    <HStack space="sm" className="items-center">
+                      <Plus size={16} color="#64748b" />
+                      <Text size="sm" className="text-typography-800">
+                        Adicionar "{searchValue}"
+                      </Text>
+                    </HStack>
+                  </Pressable>
+                ) : null}
+
+                {value.length > 0 ? (
+                  <VStack space="xs">
+                    <Text size="xs" className="text-typography-500">
+                      Selecionadas (clique para remover)
+                    </Text>
+                    {value.map((tag) => (
+                      <Pressable key={tag.id} onPress={() => removeTag(tag.id)}>
+                        <HStack space="sm" className="items-center">
+                          <X size={14} color="#64748b" />
+                          <Text size="sm" className="text-typography-800">
+                            {tag.name}
+                          </Text>
+                        </HStack>
+                      </Pressable>
+                    ))}
+                  </VStack>
+                ) : null}
+              </VStack>
+            </ScrollView>
+          </PopoverBody>
+        </PopoverContent>
+      </Popover>
     </VStack>
   );
 }

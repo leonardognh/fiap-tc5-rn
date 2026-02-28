@@ -7,20 +7,8 @@ import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
 import { Input, InputField } from "@/components/ui/input";
 import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
-import {
-  Select,
-  SelectBackdrop,
-  SelectContent,
-  SelectDragIndicator,
-  SelectDragIndicatorWrapper,
-  SelectIcon,
-  SelectInput,
-  SelectItem,
-  SelectPortal,
-  SelectScrollView,
-  SelectTrigger,
-} from "@/components/ui/select";
-import { ChevronDown, User, UserPlus } from "lucide-react-native";
+import { MenuSelect } from "@/components/ui/menu";
+import { User, UserPlus } from "lucide-react-native";
 import type { BoardItemPriority, BoardUser, ItemFormInput } from "../../types/boards";
 import type { BoardColumn } from "../../types/boards";
 
@@ -40,6 +28,13 @@ type ItemFormModalProps = {
   onClose: () => void;
   onConfirm: (input: ItemFormInput) => void;
 };
+
+const priorityOptions: Array<{ value: BoardItemPriority; label: string }> = [
+  { value: "low", label: "Baixa" },
+  { value: "medium", label: "Média" },
+  { value: "high", label: "Alta" },
+  { value: "urgent", label: "Urgente" },
+];
 
 export function ItemFormModal({
   visible,
@@ -86,33 +81,6 @@ export function ItemFormModal({
   ]);
 
   const canSubmit = useMemo(() => formTitle.trim().length >= 2, [formTitle]);
-  const priorityLabels: Record<BoardItemPriority, string> = {
-    low: "Baixa",
-    medium: "Média",
-    high: "Alta",
-    urgent: "Urgente",
-  };
-  const assigneeLabels = useMemo(() => {
-    const map = new Map<string, string>();
-    (assignees ?? []).forEach((u) => {
-      map.set(u.id, u.displayName || u.email || u.id);
-    });
-    return map;
-  }, [assignees]);
-
-  const handleAssigneeChange = (value: string) => {
-    if (value === "__none__") {
-      setFormAssigneeId(null);
-      setFormAssigneeName(null);
-      setFormAssigneePhoto(null);
-      return;
-    }
-    const user = assignees?.find((u) => u.id === value);
-    setFormAssigneeId(value);
-    setFormAssigneeName(user?.displayName ?? user?.email ?? value);
-    setFormAssigneePhoto(user?.photoURL ?? null);
-  };
-
   const handleAssignToMe = () => {
     if (!currentUser?.id) return;
     setFormAssigneeId(currentUser.id);
@@ -157,35 +125,16 @@ export function ItemFormModal({
                 <Text size="sm" className="text-typography-600">
                   Prioridade
                 </Text>
-                <Select
+                <MenuSelect
                   key={`priority-${visible ? "open" : "closed"}`}
-                  selectedValue={formPriority}
-                  initialLabel={priorityLabels[formPriority]}
-                  onValueChange={(value) => setFormPriority(value as BoardItemPriority)}
-                >
-                  <SelectTrigger
-                    variant="outline"
-                    size="sm"
-                    className="rounded-xl border-outline-300 w-full"
-                  >
-                    <SelectInput placeholder="Selecionar prioridade" />
-                    <SelectIcon as={ChevronDown} className="mr-2 text-typography-500" />
-                  </SelectTrigger>
-                  <SelectPortal>
-                    <SelectBackdrop />
-                    <SelectContent>
-                      <SelectDragIndicatorWrapper>
-                        <SelectDragIndicator />
-                      </SelectDragIndicatorWrapper>
-                      <SelectScrollView className="max-h-[320px]">
-                        <SelectItem label="Baixa" value="low" />
-                        <SelectItem label="Média" value="medium" />
-                        <SelectItem label="Alta" value="high" />
-                        <SelectItem label="Urgente" value="urgent" />
-                      </SelectScrollView>
-                    </SelectContent>
-                  </SelectPortal>
-                </Select>
+                  value={formPriority}
+                  onValueChange={(value) =>
+                    setFormPriority(value as BoardItemPriority)
+                  }
+                  options={priorityOptions}
+                  placeholder="Selecionar prioridade"
+                  size="sm"
+                />
               </VStack>
 
               {assignees && assignees.length > 0 ? (
@@ -226,41 +175,21 @@ export function ItemFormModal({
               ) : null}
 
               {moveOptions ? (
-                <Select
+                <MenuSelect
+                  value={moveOptions.currentColumnId}
                   onValueChange={(value) => {
                     if (value === moveOptions.currentColumnId) return;
                     moveOptions.onMove(value);
                   }}
+                  options={moveOptions.columns.map((column) => ({
+                    value: column.id,
+                    label: column.title,
+                    isDisabled: column.id === moveOptions.currentColumnId,
+                  }))}
                   isDisabled={moveOptions.disabled}
-                  initialLabel="Mover para"
-                >
-                  <SelectTrigger
-                    variant="outline"
-                    size="sm"
-                    className="rounded-xl border-outline-300 w-full"
-                  >
-                    <SelectInput placeholder="Mover para" />
-                    <SelectIcon as={ChevronDown} className="mr-2 text-typography-500" />
-                  </SelectTrigger>
-                  <SelectPortal>
-                    <SelectBackdrop />
-                    <SelectContent>
-                      <SelectDragIndicatorWrapper>
-                        <SelectDragIndicator />
-                      </SelectDragIndicatorWrapper>
-                      <SelectScrollView className="max-h-[320px]">
-                        {moveOptions.columns.map((column) => (
-                          <SelectItem
-                            key={column.id}
-                            label={column.title}
-                            value={column.id}
-                            isDisabled={column.id === moveOptions.currentColumnId}
-                          />
-                        ))}
-                      </SelectScrollView>
-                    </SelectContent>
-                  </SelectPortal>
-                </Select>
+                  placeholder="Mover para"
+                  size="sm"
+                />
               ) : null}
             </VStack>
 

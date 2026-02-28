@@ -24,7 +24,10 @@ const switchStyle = tva({
 });
 
 type ISwitchProps = React.ComponentProps<typeof UISwitch> &
-  VariantProps<typeof switchStyle>;
+  VariantProps<typeof switchStyle> & {
+    activeThumbColor?: string;
+    activeTrackColor?: string;
+  };
 const Switch = React.forwardRef<
   React.ComponentRef<typeof UISwitch>,
   ISwitchProps
@@ -55,19 +58,23 @@ const Switch = React.forwardRef<
   const resolvedThumb = thumbColor ?? (isDark ? '#ffffff' : '#0a0a0a');
   const resolvedActiveThumb = activeThumbColor ?? resolvedThumb;
   const resolvedActiveTrack = activeTrackColor ?? mergedTrackColor.true;
+  const isOn = typeof props.value === 'boolean' ? props.value : false;
   const resolvedIOSBackground =
     ios_backgroundColor ?? mergedTrackColor.false;
+  const resolvedTrackColor = {
+    ...mergedTrackColor,
+    true: resolvedActiveTrack,
+  };
+  const resolvedThumbColor = isOn ? resolvedActiveThumb : resolvedThumb;
 
   return (
     <UISwitch
       ref={ref}
       {...props}
       className={switchStyle({ size, class: className })}
-      trackColor={mergedTrackColor}
-      thumbColor={resolvedThumb}
-      activeThumbColor={resolvedActiveThumb}
-      activeTrackColor={resolvedActiveTrack}
-      ios_backgroundColor={resolvedIOSBackground}
+      trackColor={resolvedTrackColor}
+      thumbColor={resolvedThumbColor}
+      ios_backgroundColor={resolvedIOSBackground ?? undefined}
     />
   );
 });
