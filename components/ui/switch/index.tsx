@@ -50,7 +50,7 @@ const Switch = React.forwardRef<
   const isDark = resolvedTheme === 'dark';
   const defaultTrack = {
     false: isDark ? '#4b4b4b' : '#e0e0e0',
-    true: isDark ? '#bdbdbd' : '#5a5a5a',
+   true: isDark ? '#bdbdbd' : '#5a5a5a',
   };
   const userTrack =
     typeof trackColor === 'object' && trackColor !== null ? trackColor : null;
@@ -70,10 +70,12 @@ const Switch = React.forwardRef<
   return (
     <UISwitch
       ref={ref}
-      {...props}
+      {...(props as any)}
       className={switchStyle({ size, class: className })}
       trackColor={resolvedTrackColor}
       thumbColor={resolvedThumbColor}
+      activeThumbColor={resolvedActiveThumb}
+      activeTrackColor={resolvedActiveTrack}
       ios_backgroundColor={resolvedIOSBackground ?? undefined}
     />
   );
