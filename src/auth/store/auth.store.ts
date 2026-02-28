@@ -10,6 +10,7 @@ import {
 } from "firebase/auth";
 import { firebaseAuth } from "@/src/infrastructure/firebase/firebase.client";
 import { ensureUserDoc } from "@/src/settings/data/settings.repository";
+import i18n from "@/src/utils/i18n";
 
 type AuthState = {
   user: User | null;
@@ -31,19 +32,19 @@ const normalizeAuthError = (e: any): string => {
   const code = String(e?.code ?? "");
   switch (code) {
     case "auth/invalid-email":
-      return "Email inválido.";
+      return i18n.t("auth.errors.invalid_email");
     case "auth/user-not-found":
     case "auth/wrong-password":
     case "auth/invalid-credential":
-      return "Email ou senha incorretos.";
+      return i18n.t("auth.errors.wrong_credentials");
     case "auth/email-already-in-use":
-      return "Esse email já está em uso.";
+      return i18n.t("auth.errors.email_in_use");
     case "auth/weak-password":
-      return "Senha fraca. Use pelo menos 6 caracteres.";
+      return i18n.t("auth.errors.weak_password");
     case "auth/too-many-requests":
-      return "Muitas tentativas. Aguarde e tente novamente.";
+      return i18n.t("auth.errors.too_many_requests");
     default:
-      return "Erro de autenticação.";
+      return i18n.t("auth.errors.auth_failed");
   }
 };
 
@@ -61,7 +62,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({
           user: null,
           initializing: false,
-          error: "Falha ao verificar sessão.",
+          error: i18n.t("auth.errors.session_failed"),
         }),
     );
     return unsub;
@@ -136,7 +137,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       await signOut(firebaseAuth);
     } catch (e) {
-      set({ error: "Falha ao sair." });
+      set({ error: i18n.t("auth.errors.logout_failed") });
       throw e;
     } finally {
       set({ loading: false });

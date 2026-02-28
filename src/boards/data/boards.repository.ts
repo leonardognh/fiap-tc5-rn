@@ -1,4 +1,4 @@
-Ôªøimport {
+import {
   addDoc,
   collection,
   deleteDoc,
@@ -13,6 +13,7 @@
 } from "firebase/firestore";
 
 import { firebaseDb } from "@/src/infrastructure/firebase/firebase.client";
+import i18n from "@/src/utils/i18n";
 import type {
   Board,
   BoardColumn,
@@ -232,7 +233,7 @@ export async function createBoard(input: {
   doneColumnIds?: string[];
 }) {
   const title = input.title.trim();
-  if (!title) throw new Error("T√≠tulo do board √© obrigat√≥rio.");
+  if (!title) throw new Error("TÌtulo do board È obrigatÛrio.");
 
   const now = serverTimestamp();
   const createdBy = input.createdBy;
@@ -291,7 +292,7 @@ export async function updateBoard(
     doneColumnIds?: string[];
   },
 ) {
-  if (!boardId) throw new Error("Board inv√°lido.");
+  if (!boardId) throw new Error("Board inv·lido.");
 
   const payload: Record<string, any> = {
     updatedAt: serverTimestamp(),
@@ -299,7 +300,7 @@ export async function updateBoard(
 
   if (typeof patch.title === "string") {
     const title = patch.title.trim();
-    if (!title) throw new Error("T√≠tulo do board √© obrigat√≥rio.");
+    if (!title) throw new Error("TÌtulo do board È obrigatÛrio.");
     payload.title = title;
     payload.title_lc = normalizeText(title);
   }
@@ -347,7 +348,7 @@ export async function updateBoardPomodoro(input: {
   applyOnColumnId?: string | null;
 }) {
   const boardId = input.boardId?.trim();
-  if (!boardId) throw new Error("Board invalido.");
+  if (!boardId) throw new Error(i18n.t("boards.errors.board_invalid"));
 
   if (!input.pomodoroEnabled) {
     await updateDoc(doc(firebaseDb, "boards", boardId), {
@@ -374,11 +375,11 @@ export async function updateBoardPomodoro(input: {
   const restSeconds = Math.trunc(restSecondsRaw);
 
   if (workSeconds < 60) {
-    throw new Error("Tempo de trabalho deve ser no minimo 60 segundos.");
+    throw new Error(i18n.t("boards.errors.pomodoro_work_min"));
   }
 
   if (restSeconds < 30) {
-    throw new Error("Tempo de descanso deve ser no minimo 30 segundos.");
+    throw new Error(i18n.t("boards.errors.pomodoro_rest_min"));
   }
 
   await updateDoc(doc(firebaseDb, "boards", boardId), {
@@ -399,7 +400,7 @@ export async function setBoardStatus(
   boardId: string,
   status: BoardStatus,
 ) {
-  if (!boardId) throw new Error("Board inv√°lido.");
+  if (!boardId) throw new Error("Board inv·lido.");
   await updateDoc(doc(firebaseDb, "boards", boardId), {
     status,
     updatedAt: serverTimestamp(),
@@ -408,7 +409,7 @@ export async function setBoardStatus(
 
 export async function createColumn(boardId: string, title: string) {
   const trimmed = title.trim();
-  if (!trimmed) throw new Error("T√≠tulo da coluna √© obrigat√≥rio.");
+  if (!trimmed) throw new Error("TÌtulo da coluna È obrigatÛrio.");
 
   const now = Date.now();
   await addDoc(collection(firebaseDb, "boards", boardId, "columns"), {
@@ -426,7 +427,7 @@ export async function updateColumn(
   title: string,
 ) {
   const trimmed = title.trim();
-  if (!trimmed) throw new Error("T√≠tulo da coluna √© obrigat√≥rio.");
+  if (!trimmed) throw new Error("TÌtulo da coluna È obrigatÛrio.");
 
   await updateDoc(doc(firebaseDb, "boards", boardId, "columns", columnId), {
     title: trimmed,
@@ -435,7 +436,7 @@ export async function updateColumn(
 }
 
 export async function reorderColumns(boardId: string, columnIds: string[]) {
-  if (!boardId) throw new Error("Board inv√°lido.");
+  if (!boardId) throw new Error("Board inv·lido.");
   const base = Date.now();
   const batch = writeBatch(firebaseDb);
   columnIds.forEach((columnId, index) => {
@@ -469,7 +470,7 @@ export async function createItem(input: {
   assignedPhotoUrl?: string | null;
 }) {
   const trimmed = input.title.trim();
-  if (!trimmed) throw new Error("T√≠tulo do item √© obrigat√≥rio.");
+  if (!trimmed) throw new Error("TÌtulo do item È obrigatÛrio.");
 
   const now = Date.now();
   const priority = toPriority(input.priority) ?? "medium";
@@ -504,7 +505,7 @@ export async function updateItem(input: {
 
   if (typeof input.title === "string") {
     const trimmed = input.title.trim();
-    if (!trimmed) throw new Error("T√≠tulo do item √© obrigat√≥rio.");
+    if (!trimmed) throw new Error("TÌtulo do item È obrigatÛrio.");
     payload.title = trimmed;
   }
 
@@ -547,7 +548,7 @@ export async function moveItemsBatch(input: {
   toColumnId: string;
 }) {
   const boardId = input.boardId?.trim();
-  if (!boardId) throw new Error("Board inv√°lido.");
+  if (!boardId) throw new Error("Board inv·lido.");
   const itemIds = Array.from(new Set(input.itemIds)).filter(Boolean);
   if (!itemIds.length) return;
 

@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 
 import { firebaseDb } from "@/src/infrastructure/firebase/firebase.client";
+import i18n from "@/src/utils/i18n";
 import type { Tag } from "../types/boards";
 
 type FirestoreTagDoc = {
@@ -81,7 +82,7 @@ export async function listTagsByIds(ids: string[]): Promise<Tag[]> {
 export async function createTag(name: string): Promise<Tag> {
   const trimmed = (name ?? "").trim();
   if (!trimmed) {
-    throw new Error("Nome da tag é obrigatório.");
+    throw new Error(i18n.t("boards.errors.tag_name_required"));
   }
 
   const name_lc = toNameLc(trimmed);

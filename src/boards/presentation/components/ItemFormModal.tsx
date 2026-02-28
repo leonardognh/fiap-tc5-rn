@@ -1,5 +1,6 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
 import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";
 import { HStack } from "@/components/ui/hstack";
@@ -29,17 +30,10 @@ type ItemFormModalProps = {
   onConfirm: (input: ItemFormInput) => void;
 };
 
-const priorityOptions: Array<{ value: BoardItemPriority; label: string }> = [
-  { value: "low", label: "Baixa" },
-  { value: "medium", label: "Média" },
-  { value: "high", label: "Alta" },
-  { value: "urgent", label: "Urgente" },
-];
-
 export function ItemFormModal({
   visible,
   title,
-  confirmLabel = "Salvar",
+  confirmLabel,
   initial,
   moveOptions,
   assignees,
@@ -47,12 +41,24 @@ export function ItemFormModal({
   onClose,
   onConfirm,
 }: ItemFormModalProps) {
+  const { t } = useTranslation();
+  const resolvedConfirmLabel = confirmLabel ?? t("common.save");
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formPriority, setFormPriority] = useState<BoardItemPriority>("medium");
   const [formAssigneeId, setFormAssigneeId] = useState<string | null>(null);
   const [formAssigneeName, setFormAssigneeName] = useState<string | null>(null);
   const [formAssigneePhoto, setFormAssigneePhoto] = useState<string | null>(null);
+
+  const priorityOptions = useMemo(
+    () => [
+      { value: "low", label: t("boards.priorities.low") },
+      { value: "medium", label: t("boards.priorities.medium") },
+      { value: "high", label: t("boards.priorities.high") },
+      { value: "urgent", label: t("boards.priorities.urgent") },
+    ],
+    [t],
+  );
 
   useEffect(() => {
     if (!visible) {
@@ -101,7 +107,7 @@ export function ItemFormModal({
             <VStack space="md">
               <Input className="border-outline-300 rounded-xl">
                 <InputField
-                  placeholder="Título do item"
+                  placeholder={t("boards.itemForm.title_placeholder")}
                   value={formTitle}
                   onChangeText={setFormTitle}
                   maxLength={120}
@@ -110,7 +116,7 @@ export function ItemFormModal({
 
               <Input className="border-outline-300 rounded-xl min-h-[120px] items-start">
                 <InputField
-                  placeholder="Descrição (opcional)"
+                  placeholder={t("boards.itemForm.description_placeholder")}
                   value={formDescription}
                   onChangeText={setFormDescription}
                   maxLength={500}
@@ -123,16 +129,14 @@ export function ItemFormModal({
 
               <VStack space="sm">
                 <Text size="sm" className="text-typography-600">
-                  Prioridade
+                  {t("boards.itemForm.priority_label")}
                 </Text>
                 <MenuSelect
                   key={`priority-${visible ? "open" : "closed"}`}
                   value={formPriority}
-                  onValueChange={(value) =>
-                    setFormPriority(value as BoardItemPriority)
-                  }
+                  onValueChange={(value) => setFormPriority(value as BoardItemPriority)}
                   options={priorityOptions}
-                  placeholder="Selecionar prioridade"
+                  placeholder={t("boards.itemForm.priority_placeholder")}
                   size="sm"
                 />
               </VStack>
@@ -148,15 +152,12 @@ export function ItemFormModal({
                     </Box>
                     <VStack space="xs">
                       <Text size="xs" className="text-typography-500">
-                        Atribuído a
+                        {t("boards.itemForm.assigned_to")}
                       </Text>
-                      <Text
-                        size="sm"
-                        className="text-typography-900 font-semibold"
-                      >
+                      <Text size="sm" className="text-typography-900 font-semibold">
                         {formAssigneeId
                           ? formAssigneeName ?? formAssigneeId
-                          : "Não atribuído"}
+                          : t("boards.itemForm.unassigned")}
                       </Text>
                     </VStack>
                   </HStack>
@@ -168,7 +169,9 @@ export function ItemFormModal({
                       className="w-full rounded-xl border-outline-300 bg-transparent"
                     >
                       <ButtonIcon as={UserPlus} className="text-typography-900" />
-                      <ButtonText className="text-typography-900">Atribuir a mim</ButtonText>
+                      <ButtonText className="text-typography-900">
+                        {t("boards.itemForm.assign_to_me")}
+                      </ButtonText>
                     </Button>
                   ) : null}
                 </VStack>
@@ -177,7 +180,7 @@ export function ItemFormModal({
               {moveOptions ? (
                 <VStack space="sm">
                   <Text size="sm" className="text-typography-600">
-                    Mover para
+                    {t("boards.itemForm.move_to")}
                   </Text>
                   <MenuSelect
                     value={moveOptions.currentColumnId}
@@ -199,22 +202,24 @@ export function ItemFormModal({
 
             <HStack space="sm" className="justify-end">
               <Button variant="outline" onPress={onClose} size="sm">
-                <ButtonText>Cancelar</ButtonText>
+                <ButtonText>{t("common.cancel")}</ButtonText>
               </Button>
               <Button
                 size="sm"
-                onPress={() => onConfirm({
-                  title: formTitle.trim(),
-                  description: formDescription.trim(),
-                  priority: formPriority,
-                  assignedTo: formAssigneeId,
-                  assignedName: formAssigneeName,
-                  assignedPhotoUrl: formAssigneePhoto,
-                })}
+                onPress={() =>
+                  onConfirm({
+                    title: formTitle.trim(),
+                    description: formDescription.trim(),
+                    priority: formPriority,
+                    assignedTo: formAssigneeId,
+                    assignedName: formAssigneeName,
+                    assignedPhotoUrl: formAssigneePhoto,
+                  })
+                }
                 isDisabled={!canSubmit}
                 className={!canSubmit ? "bg-background-300" : undefined}
               >
-                <ButtonText>{confirmLabel}</ButtonText>
+                <ButtonText>{resolvedConfirmLabel}</ButtonText>
               </Button>
             </HStack>
           </VStack>

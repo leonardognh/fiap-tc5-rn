@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Board, BoardColumn, BoardItem, BoardItemPriority } from "../types/boards";
 import * as repo from "../data/boards.repository";
+import i18n from "@/src/utils/i18n";
 
 type BoardViewState = {
   boardId: string | null;
@@ -87,7 +88,7 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
           done();
         }
       },
-      (err) => set({ error: err.message ?? "Falha ao carregar board.", loading: false }),
+      (err) => set({ error: err.message ?? i18n.t("boards.errors.load_board"), loading: false }),
     );
 
     const unsubColumns = repo.watchColumns(
@@ -99,7 +100,7 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
           done();
         }
       },
-      (err) => set({ error: err.message ?? "Falha ao carregar colunas.", loading: false }),
+      (err) => set({ error: err.message ?? i18n.t("boards.errors.load_columns"), loading: false }),
     );
 
     const unsubItems = repo.watchItems(
@@ -111,7 +112,7 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
           done();
         }
       },
-      (err) => set({ error: err.message ?? "Falha ao carregar itens.", loading: false }),
+      (err) => set({ error: err.message ?? i18n.t("boards.errors.load_items"), loading: false }),
     );
 
     const unsubscribe = () => {
@@ -131,7 +132,7 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
     try {
       await repo.createColumn(boardId, title);
     } catch (err: any) {
-      set({ error: err?.message ?? "Falha ao criar coluna." });
+      set({ error: err?.message ?? i18n.t("boards.errors.create_column") });
     }
   },
 
@@ -142,7 +143,7 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
     try {
       await repo.updateColumn(boardId, columnId, title);
     } catch (err: any) {
-      set({ error: err?.message ?? "Falha ao atualizar coluna." });
+      set({ error: err?.message ?? i18n.t("boards.errors.update_column") });
     }
   },
 
@@ -153,7 +154,7 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
     try {
       await repo.deleteColumn(boardId, columnId);
     } catch (err: any) {
-      set({ error: err?.message ?? "Falha ao remover coluna." });
+      set({ error: err?.message ?? i18n.t("boards.errors.remove_column") });
     }
   },
 
@@ -164,7 +165,7 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
     try {
       await repo.reorderColumns(boardId, orderedIds);
     } catch (err: any) {
-      set({ error: err?.message ?? "Falha ao reordenar linhas." });
+      set({ error: err?.message ?? i18n.t("boards.errors.reorder_columns") });
     }
   },
 
@@ -184,7 +185,7 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
         assignedPhotoUrl: input.assignedPhotoUrl,
       });
     } catch (err: any) {
-      set({ error: err?.message ?? "Falha ao criar item." });
+      set({ error: err?.message ?? i18n.t("boards.errors.create_item") });
     }
   },
 
@@ -204,7 +205,7 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
         assignedPhotoUrl: input.assignedPhotoUrl,
       });
     } catch (err: any) {
-      set({ error: err?.message ?? "Falha ao atualizar item." });
+      set({ error: err?.message ?? i18n.t("boards.errors.update_item") });
     }
   },
 
@@ -219,7 +220,7 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
     try {
       await repo.moveItem({ boardId, itemId, toColumnId });
     } catch (err: any) {
-      set({ error: err?.message ?? "Falha ao mover item." });
+      set({ error: err?.message ?? i18n.t("boards.errors.move_item") });
     }
   },
 
@@ -230,7 +231,7 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
     try {
       await repo.moveItemsBatch({ boardId, itemIds, toColumnId });
     } catch (err: any) {
-      set({ error: err?.message ?? "Falha ao mover itens." });
+      set({ error: err?.message ?? i18n.t("boards.errors.move_items") });
     }
   },
 
@@ -241,7 +242,7 @@ export const useBoardViewStore = create<BoardViewState>((set, get) => ({
     try {
       await repo.updateBoardPomodoro({ boardId, ...input });
     } catch (err: any) {
-      set({ error: err?.message ?? "Falha ao atualizar pomodoro." });
+      set({ error: err?.message ?? i18n.t("boards.errors.update_pomodoro") });
     }
   },
 }));

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView } from "react-native";
 import { ChevronDown, Plus, Search, X } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
@@ -26,11 +27,8 @@ type TagsMultiSelectProps = {
 const toNameLc = (value: string) => value.trim().toLowerCase();
 const tagNameLc = (tag: Tag) => toNameLc(tag.name_lc ?? tag.name ?? "");
 
-export function TagsMultiSelect({
-  value,
-  onChange,
-  disabled,
-}: TagsMultiSelectProps) {
+export function TagsMultiSelect({ value, onChange, disabled }: TagsMultiSelectProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [options, setOptions] = useState<Tag[]>([]);
@@ -69,7 +67,7 @@ export function TagsMultiSelect({
       } catch {
         if (searchSeq.current === seq) {
           setOptions([]);
-          setError("Falha ao carregar tags.");
+          setError(t("boards.tags.load_error"));
         }
       } finally {
         if (searchSeq.current === seq) {
@@ -79,7 +77,7 @@ export function TagsMultiSelect({
     }, 200);
 
     return () => clearTimeout(timer);
-  }, [open, search, disabled]);
+  }, [open, search, disabled, t]);
 
   useEffect(() => {
     if (!open) return;
@@ -115,7 +113,7 @@ export function TagsMultiSelect({
       addTag(created);
       setSearch("");
     } catch {
-      setError("Falha ao criar tag.");
+      setError(t("boards.tags.create_error"));
     } finally {
       setLoading(false);
     }
@@ -124,7 +122,7 @@ export function TagsMultiSelect({
   return (
     <VStack space="xs">
       <Text size="sm" className="text-typography-600">
-        Tags
+        {t("boards.tags.label")}
       </Text>
       <Popover
         isOpen={open}
@@ -149,7 +147,7 @@ export function TagsMultiSelect({
                 <HStack space="xs" className="flex-1 flex-wrap items-center">
                   {value.length === 0 ? (
                     <Text size="xs" className="text-typography-400">
-                      Selecione...
+                      {t("boards.tags.select_placeholder")}
                     </Text>
                   ) : (
                     <>
@@ -167,9 +165,7 @@ export function TagsMultiSelect({
                               <Text size="xs" className="text-typography-600">
                                 {tag.name}
                               </Text>
-                              {!disabled ? (
-                                <X size={12} color="#64748b" />
-                              ) : null}
+                              {!disabled ? <X size={12} color="#64748b" /> : null}
                             </HStack>
                           </Box>
                         </Pressable>
@@ -199,7 +195,7 @@ export function TagsMultiSelect({
                   <InputIcon as={Search} />
                 </InputSlot>
                 <InputField
-                  placeholder="Pesquise ou adicione tags..."
+                  placeholder={t("boards.tags.search_placeholder")}
                   value={search}
                   onChangeText={setSearch}
                   editable={!disabled}
@@ -207,10 +203,7 @@ export function TagsMultiSelect({
               </Input>
             </Box>
 
-            <ScrollView
-              className="max-h-[260px]"
-              keyboardShouldPersistTaps="handled"
-            >
+            <ScrollView className="max-h-[260px]" keyboardShouldPersistTaps="handled">
               <VStack space="sm" className="p-2">
                 {error ? (
                   <Text size="xs" className="text-error-600">
@@ -220,14 +213,14 @@ export function TagsMultiSelect({
 
                 {loading ? (
                   <Text size="xs" className="text-typography-500">
-                    Carregando...
+                    {t("common.loading")}
                   </Text>
                 ) : null}
 
                 {availableOptions.length > 0 ? (
                   <VStack space="xs">
                     <Text size="xs" className="text-typography-500">
-                     Tags disponíveis
+                      {t("boards.tags.available")}
                     </Text>
                     {availableOptions.map((tag) => (
                       <Pressable
@@ -243,7 +236,7 @@ export function TagsMultiSelect({
                   </VStack>
                 ) : !showAdd && !loading ? (
                   <Text size="xs" className="text-typography-500">
-                    Nenhuma tag encontrada.
+                    {t("boards.tags.none_found")}
                   </Text>
                 ) : null}
 
@@ -256,7 +249,7 @@ export function TagsMultiSelect({
                     <HStack space="sm" className="items-center">
                       <Plus size={16} color="#64748b" />
                       <Text size="sm" className="text-typography-800">
-                        Adicionar "{searchValue}"
+                        {t("boards.tags.add_tag", { tag: searchValue })}
                       </Text>
                     </HStack>
                   </Pressable>
@@ -265,7 +258,7 @@ export function TagsMultiSelect({
                 {value.length > 0 ? (
                   <VStack space="xs">
                     <Text size="xs" className="text-typography-500">
-                      Selecionadas (clique para remover)
+                      {t("boards.tags.selected_hint")}
                     </Text>
                     {value.map((tag) => (
                       <Pressable key={tag.id} onPress={() => removeTag(tag.id)}>

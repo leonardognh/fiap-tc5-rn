@@ -17,6 +17,8 @@ import {
   Trash2,
 } from "lucide-react-native";
 import { Motion } from "@legendapp/motion";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";
@@ -41,17 +43,20 @@ import { PomodoroSettingsModal } from "../components/PomodoroSettingsModal";
 
 const MotionView = Motion.View as unknown as React.ComponentType<any>;
 
-const getPriorityMeta = (priority?: BoardItemPriority | null) => {
+const getPriorityMeta = (
+  priority: BoardItemPriority | null | undefined,
+  t: TFunction<"translation", undefined>,
+) => {
   switch (priority) {
     case "low":
-      return { Icon: ChevronDown, color: "#10b981", label: "Baixa" };
+      return { Icon: ChevronDown, color: "#10b981", label: t("boards.priorities.low") };
     case "high":
-      return { Icon: ChevronUp, color: "#f59e0b", label: "Alta" };
+      return { Icon: ChevronUp, color: "#f59e0b", label: t("boards.priorities.high") };
     case "urgent":
-      return { Icon: ChevronsUp, color: "#ef4444", label: "Urgente" };
+      return { Icon: ChevronsUp, color: "#ef4444", label: t("boards.priorities.urgent") };
     case "medium":
     default:
-      return { Icon: Minus, color: "#64748b", label: "Média" };
+      return { Icon: Minus, color: "#64748b", label: t("boards.priorities.medium") };
   }
 };
 
@@ -75,6 +80,7 @@ type PomodoroRuntimeState = {
 };
 
 export function BoardScreen() {
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{ boardId?: string }>();
   const boardId = Array.isArray(params.boardId)
     ? params.boardId[0]
@@ -136,9 +142,9 @@ export function BoardScreen() {
             duration: 2500,
             render: ({ id }) => (
               <Toast nativeID={`toast-${id}`} action="info" variant="solid">
-                <ToastTitle>Movimento bloqueado</ToastTitle>
+                <ToastTitle>{t("boards.board.move_blocked_title")}</ToastTitle>
                 <ToastDescription>
-                  Item não pode ser finalizado sem iniciar.
+                  {t("boards.board.move_blocked_finish_without_start")}
                 </ToastDescription>
               </Toast>
             ),
@@ -157,9 +163,9 @@ export function BoardScreen() {
             duration: 2500,
             render: ({ id }) => (
               <Toast nativeID={`toast-${id}`} action="info" variant="solid">
-                <ToastTitle>Movimento bloqueado</ToastTitle>
+                <ToastTitle>{t("boards.board.move_blocked_title")}</ToastTitle>
                 <ToastDescription>
-                  Item não pode voltar para "não iniciadas".
+                  {t("boards.board.move_blocked_back_to_not_started")}
                 </ToastDescription>
               </Toast>
             ),
@@ -178,8 +184,8 @@ export function BoardScreen() {
             duration: 2500,
             render: ({ id }) => (
               <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-                <ToastTitle>Movimento bloqueado</ToastTitle>
-                <ToastDescription>Item já está concluído.</ToastDescription>
+                <ToastTitle>{t("boards.board.move_blocked_title")}</ToastTitle>
+                <ToastDescription>{t("boards.board.move_blocked_done")}</ToastDescription>
               </Toast>
             ),
           });
@@ -189,7 +195,7 @@ export function BoardScreen() {
 
       return false;
     },
-    [notStartedColumnIds, doneColumnIds, toast, toastEnabled],
+    [notStartedColumnIds, doneColumnIds, toast, toastEnabled, t],
   );
   const checkStartedRules = useCallback(
     (fromColumnId: string, toColumnId: string) => {
@@ -282,7 +288,7 @@ export function BoardScreen() {
       headerTitle: () => (
         <HStack space="sm" className="items-center">
           <Text size="sm" className="text-typography-900 font-semibold">
-            {board?.title ?? "Board"}
+            {board?.title ?? t("boards.board.title_fallback")}
           </Text>
         </HStack>
       ),
@@ -292,7 +298,7 @@ export function BoardScreen() {
           variant="link"
           className="p-0"
           onPress={() => router.back()}
-          accessibilityLabel="Voltar"
+          accessibilityLabel={t("boards.board.back")}
         >
           <ButtonIcon as={ChevronLeft} height={30} width={34} />
         </Button>
@@ -301,7 +307,7 @@ export function BoardScreen() {
         <Pressable
           onPress={handleLogout}
           hitSlop={8}
-          accessibilityLabel="Sair"
+          accessibilityLabel={t("boards.board.logout")}
           style={{
             backgroundColor: "#fff",
             borderRadius: 999,
@@ -315,7 +321,7 @@ export function BoardScreen() {
         </Pressable>
       ),
     });
-  }, [navigation, board?.title, board?.status, handleLogout, iconColor]);
+  }, [navigation, board?.title, board?.status, handleLogout, iconColor, t]);
 
   const readOnly = board?.status === "archived";
   const animationsEnabled = preferences.animations ?? true;
@@ -591,9 +597,9 @@ export function BoardScreen() {
           duration: 3000,
           render: ({ id }) => (
             <Toast nativeID={`toast-${id}`} action="warning" variant="solid">
-              <ToastTitle>Não é possível apagar</ToastTitle>
+              <ToastTitle>{t("boards.board.cannot_delete_column_title")}</ToastTitle>
               <ToastDescription>
-                Remova os itens desta classificação antes de apagá-la.
+                {t("boards.board.cannot_delete_column_desc")}
               </ToastDescription>
             </Toast>
           ),
@@ -603,18 +609,20 @@ export function BoardScreen() {
     }
 
     setConfirmState({
-      title: "Remover classificação",
-      message: `Deseja remover a classificação "${column.title}"?`,
-      confirmLabel: "Remover",
+      title: t("boards.board.confirm_delete_column_title"),
+      message: t("boards.board.confirm_delete_column_message", {
+        title: column.title,
+      }),
+      confirmLabel: t("boards.board.confirm_delete_column_confirm"),
       destructive: true,
       onConfirm: () => deleteColumn(column.id),
     });
   };
   const confirmDeleteItem = (item: BoardItem) => {
     setConfirmState({
-      title: "Remover item",
-      message: `Deseja remover "${item.title}"?`,
-      confirmLabel: "Remover",
+      title: t("boards.board.confirm_delete_item_title"),
+      message: t("boards.board.confirm_delete_item_message", { title: item.title }),
+      confirmLabel: t("boards.board.confirm_delete_item_confirm"),
       destructive: true,
       onConfirm: () => deleteItem(item.id),
     });
@@ -628,7 +636,7 @@ export function BoardScreen() {
   if (!boardId) {
     return (
       <Box className="flex-1 bg-background-0 items-center justify-center">
-        <Text className="text-typography-600">Board não encontrado.</Text>
+        <Text className="text-typography-600">{t("boards.board.not_found")}</Text>
       </Box>
     );
   }
@@ -648,7 +656,7 @@ export function BoardScreen() {
         <HStack space="sm" className="items-center">
           <Input className="border-outline-300 rounded-xl flex-1">
             <InputField
-              placeholder="Nova coluna"
+              placeholder={t("boards.board.new_column_placeholder")}
               value={newColumnTitle}
               onChangeText={setNewColumnTitle}
               onSubmitEditing={handleAddColumn}
@@ -676,7 +684,7 @@ export function BoardScreen() {
         </HStack>
 
         {loading && columns.length === 0 ? (
-          <Text className="text-typography-500">Carregando...</Text>
+          <Text className="text-typography-500">{t("common.loading")}</Text>
         ) : null}
 
         <Box className="flex-1 min-h-0">
@@ -707,7 +715,10 @@ export function BoardScreen() {
                 const column = info.item;
                 const columnItems = itemsByColumn.get(column.id) ?? [];
                 const expanded = expandedLines.includes(column.id);
-                const countLabel = columnItems.length === 1 ? "item" : "itens";
+                const countLabel =
+                  columnItems.length === 1
+                    ? t("boards.board.count_item")
+                    : t("boards.board.count_items");
                 const delay = Math.min((info.index ?? 0) * 40, 200);
                                 const motionProps = {
                   initial: animationsEnabled ? { opacity: 0, y: 12 } : { opacity: 1, y: 0 },
@@ -782,12 +793,12 @@ export function BoardScreen() {
                       <VStack space="sm" className="mt-3">
                         {columnItems.length === 0 ? (
                           <Text size="xs" className="text-typography-500">
-                            Sem itens nesta linha.
+                            {t("boards.board.empty_column")}
                           </Text>
                         ) : null}
 
                         {columnItems.map((task) => {
-                          const priorityMeta = getPriorityMeta(task.priority);
+                          const priorityMeta = getPriorityMeta(task.priority, t);
                           const PriorityIcon = priorityMeta.Icon;
 
                           return (
@@ -805,7 +816,7 @@ export function BoardScreen() {
                                       size="xs"
                                       variant="link"
                                       onPress={() => setEditingItem(task)}
-                                      accessibilityLabel="Editar item"
+                                      accessibilityLabel={t("boards.board.edit_item_accessibility")}
                                     >
                                       <ButtonIcon as={Pencil} />
                                     </Button>
@@ -847,7 +858,7 @@ export function BoardScreen() {
                             onPress={() => setCreatingItemFor(column.id)}
                           >
                             <ButtonIcon as={Plus} />
-                            <ButtonText>Novo item</ButtonText>
+                            <ButtonText>{t("boards.board.new_item")}</ButtonText>
                           </Button>
                         ) : null}
                       </VStack>
@@ -896,7 +907,7 @@ export function BoardScreen() {
               >
                 <HStack space="sm" className="items-center py-2">
                   <Pencil size={16} color="#475569" />
-                  <Text className="text-typography-900">Editar</Text>
+                  <Text className="text-typography-900">{t("boards.board.menu_edit")}</Text>
                 </HStack>
               </Pressable>
               <Pressable
@@ -910,7 +921,9 @@ export function BoardScreen() {
               >
                 <HStack space="sm" className="items-center py-2">
                   <Trash2 size={16} color="#ef4444" />
-                  <Text className="text-typography-900">Remover</Text>
+                  <Text className="text-typography-900">
+                    {t("boards.board.menu_remove")}
+                  </Text>
                 </HStack>
               </Pressable>
             </Box>
@@ -938,7 +951,7 @@ export function BoardScreen() {
 
       <ColumnFormModal
         visible={!!editingColumn}
-        title="Editar linha"
+        title={t("boards.board.edit_column_title")}
         initialTitle={editingColumn?.title}
         onClose={() => setEditingColumn(null)}
         onConfirm={async (title) => {
@@ -950,8 +963,8 @@ export function BoardScreen() {
 
       <ItemFormModal
         visible={!!creatingItemFor}
-        title="Novo item"
-        confirmLabel="Criar"
+        title={t("boards.board.new_item_title")}
+        confirmLabel={t("boards.board.create_item")}
         assignees={memberUsers}
         currentUser={
           authUser
@@ -980,8 +993,8 @@ export function BoardScreen() {
 
       <ItemFormModal
         visible={!!editingItem}
-        title="Editar item"
-        confirmLabel="Salvar"
+        title={t("boards.board.edit_item_title")}
+        confirmLabel={t("boards.board.save_item")}
         assignees={memberUsers}
         currentUser={
           authUser

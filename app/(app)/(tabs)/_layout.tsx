@@ -9,6 +9,7 @@ import {
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Tabs, useRouter } from "expo-router";
 import { LogOut } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 import { ConfirmModal } from "@/components/modals/ConfirmModal";
 import Colors from "@/constants/Colors";
@@ -25,6 +26,7 @@ function TabBarIcon(props: {
 }
 
 export default function TabLayout() {
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const router = useRouter();
   const logout = useAuthStore((s) => s.logout);
@@ -40,7 +42,7 @@ export default function TabLayout() {
       await logout();
       router.replace("/");
     } catch (error) {
-      Alert.alert("Erro", "Não foi possível sair. Tente novamente.");
+      Alert.alert(t("common.error"), t("app.logout.error"));
     }
   };
 
@@ -101,7 +103,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="index"
           options={{
-            title: "Boards",
+            title: t("app.tabs.boards"),
             tabBarIcon: ({ color }) => (
               <TabBarIcon name="columns" color={color} />
             ),
@@ -110,14 +112,14 @@ export default function TabLayout() {
         <Tabs.Screen
           name="settings"
           options={{
-            title: "Configurações",
+            title: t("app.tabs.settings"),
             tabBarIcon: ({ color }) => <TabBarIcon name="cog" color={color} />,
           }}
         />
         <Tabs.Screen
           name="boards/[boardId]"
           options={{
-            title: "Board",
+            title: t("app.tabs.board"),
             href: null,
           }}
         />
@@ -125,9 +127,9 @@ export default function TabLayout() {
 
       <ConfirmModal
         visible={logoutOpen}
-        title="Sair"
-        message="Deseja sair do app?"
-        confirmLabel="Sair"
+        title={t("app.logout.title")}
+        message={t("app.logout.message")}
+        confirmLabel={t("app.logout.confirm")}
         destructive
         onClose={() => setLogoutOpen(false)}
         onConfirm={() => void handleLogout()}

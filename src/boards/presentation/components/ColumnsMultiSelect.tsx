@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView } from "react-native";
+import { useTranslation } from "react-i18next";
 
 import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
@@ -30,8 +31,10 @@ export function ColumnsMultiSelect({
   options,
   onChange,
   disabled,
-  placeholder = "Selecione...",
+  placeholder,
 }: ColumnsMultiSelectProps) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder ?? t("boards.columns.select_placeholder");
   const selectedIds = useMemo(() => new Set(value), [value]);
   const selectedColumns = useMemo(
     () => options.filter((col) => selectedIds.has(col.id)),
@@ -83,7 +86,7 @@ export function ColumnsMultiSelect({
                 <HStack space="xs" className="flex-1 flex-wrap items-center">
                   {selectedColumns.length === 0 ? (
                     <Text size="xs" className="text-typography-400">
-                      {placeholder}
+                      {resolvedPlaceholder}
                     </Text>
                   ) : (
                     <>
@@ -100,9 +103,7 @@ export function ColumnsMultiSelect({
                               <Text size="xs" className="text-typography-600">
                                 {col.title}
                               </Text>
-                              {!disabled ? (
-                                <X size={12} color="#64748b" />
-                              ) : null}
+                              {!disabled ? <X size={12} color="#64748b" /> : null}
                             </HStack>
                           </Box>
                         </Pressable>
@@ -131,7 +132,7 @@ export function ColumnsMultiSelect({
                 {availableColumns.length > 0 ? (
                   <VStack space="xs">
                     <Text size="xs" className="text-typography-500">
-                      Colunas disponiveis
+                      {t("boards.columns.available")}
                     </Text>
                     {availableColumns.map((col) => (
                       <Pressable
@@ -147,14 +148,14 @@ export function ColumnsMultiSelect({
                   </VStack>
                 ) : (
                   <Text size="xs" className="text-typography-500">
-                    Nenhuma coluna disponivel.
+                    {t("boards.columns.none_available")}
                   </Text>
                 )}
 
                 {selectedColumns.length > 0 ? (
                   <VStack space="xs">
                     <Text size="xs" className="text-typography-500">
-                      Selecionadas (clique para remover)
+                      {t("boards.columns.selected_hint")}
                     </Text>
                     {selectedColumns.map((col) => (
                       <Pressable key={col.id} onPress={() => remove(col.id)}>

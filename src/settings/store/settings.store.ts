@@ -1,4 +1,4 @@
-Ôªøimport {
+import {
   signOut,
   updateProfile as updateAuthProfile,
   updateEmail,
@@ -15,6 +15,7 @@ import type {
   UserProfilePatch,
 } from "../types/settings";
 import { DEFAULT_PREFERENCES } from "../types/settings";
+import i18n from "@/src/utils/i18n";
 
 type SettingsState = {
   userId: string | null;
@@ -69,7 +70,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       },
       (err) =>
         set({
-          error: err.message ?? "Falha ao carregar perfil.",
+          error: err.message ?? i18n.t("settings.errors.profile_load"),
           loading: false,
         }),
     );
@@ -82,7 +83,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       },
       (err) =>
         set({
-          error: err.message ?? "Falha ao carregar prefer√™ncias.",
+          error: err.message ?? i18n.t("settings.errors.preferences_load"),
           loading: false,
         }),
     );
@@ -100,7 +101,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     const user = firebaseAuth.currentUser;
     const userId = get().userId;
     if (!user || !userId || user.uid !== userId) {
-      set({ error: "Usu√°rio n√£o autenticado." });
+      set({ error: "Usu·rio n„o autenticado." });
       return;
     }
 
@@ -146,10 +147,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     } catch (err: any) {
       const code = String(err?.code ?? "");
       if (code === "auth/requires-recent-login") {
-        set({ error: "Fa√ßa login novamente para atualizar seus dados." });
+        set({ error: "FaÁa login novamente para atualizar seus dados." });
         await signOut(firebaseAuth);
       } else {
-        set({ error: err?.message ?? "Falha ao atualizar perfil." });
+        set({ error: err?.message ?? i18n.t("settings.errors.update_profile") });
       }
     } finally {
       set({ loading: false });
@@ -159,7 +160,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   updatePreferences: async (patch) => {
     const userId = get().userId;
     if (!userId) {
-      set({ error: "Usu√°rio n√£o autenticado." });
+      set({ error: "Usu·rio n„o autenticado." });
       return;
     }
 
@@ -180,7 +181,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     } catch (err: any) {
       set({
         preferences: prev,
-        error: err?.message ?? "Falha ao atualizar prefer√™ncias.",
+        error: err?.message ?? i18n.t("settings.errors.update_preferences"),
       });
     }
   },

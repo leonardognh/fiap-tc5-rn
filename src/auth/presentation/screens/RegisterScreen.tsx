@@ -1,5 +1,6 @@
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Alert } from "react-native";
 
 // Gluestack UI Components
@@ -20,6 +21,7 @@ import { useAuthStore } from "../../store/auth.store";
 
 export function RegisterScreen() {
   const { register, loading, error, clearError } = useAuthStore();
+  const { t } = useTranslation();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -49,7 +51,7 @@ export function RegisterScreen() {
   const onSubmit = async () => {
     try {
       if (!passwordsMatch) {
-        Alert.alert("Ops", "As senhas não conferem.", [{ text: "OK" }]);
+        Alert.alert(t("common.oops"), t("auth.password_mismatch"), [{ text: t("common.ok") }]);
         return;
       }
       await register(name, email, password);
@@ -60,7 +62,7 @@ export function RegisterScreen() {
   };
 
   if (error) {
-    Alert.alert("Ops", error, [{ text: "OK", onPress: clearError }]);
+    Alert.alert(t("common.oops"), error, [{ text: t("common.ok"), onPress: clearError }]);
   }
 
   return (
@@ -70,10 +72,10 @@ export function RegisterScreen() {
         {/* Cabeçalho */}
         <VStack space="xs">
           <Heading size="3xl" className="text-typography-900">
-            Criar conta
+            {t("auth.register_title")}
           </Heading>
           <Text size="md" className="text-typography-500">
-            Preencha os dados abaixo para começar
+            {t("auth.register_subtitle")}
           </Text>
         </VStack>
 
@@ -81,7 +83,7 @@ export function RegisterScreen() {
           {/* Campo de Nome */}
           <VStack space="xs">
             <Text size="sm" bold className="text-typography-700 ml-1">
-              Nome completo
+              {t("auth.full_name")}
             </Text>
             <Input
               size="md"
@@ -91,7 +93,7 @@ export function RegisterScreen() {
                 <InputIcon as={User} className="text-typography-500" />
               </InputSlot>
               <InputField
-                placeholder="Ex: João Silva"
+                placeholder={t("auth.name_placeholder")}
                 value={name}
                 onChangeText={setName}
               />
@@ -101,7 +103,7 @@ export function RegisterScreen() {
           {/* Campo de Email */}
           <VStack space="xs">
             <Text size="sm" bold className="text-typography-700 ml-1">
-              E-mail
+              {t("auth.email_label")}
             </Text>
             <Input
               size="md"
@@ -111,7 +113,7 @@ export function RegisterScreen() {
                 <InputIcon as={Mail} className="text-typography-500" />
               </InputSlot>
               <InputField
-                placeholder="seu@email.com"
+                placeholder={t("auth.email_placeholder")}
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
@@ -123,7 +125,7 @@ export function RegisterScreen() {
           {/* Campo de Senha */}
           <VStack space="xs">
             <Text size="sm" bold className="text-typography-700 ml-1">
-              Senha
+              {t("auth.password_label")}
             </Text>
             <Input
               size="md"
@@ -135,7 +137,7 @@ export function RegisterScreen() {
                 <InputIcon as={Lock} className="text-typography-500" />
               </InputSlot>
               <InputField
-                placeholder="Mínimo 6 caracteres"
+                placeholder={t("auth.password_placeholder")}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -144,7 +146,7 @@ export function RegisterScreen() {
                 className="pr-3"
                 onPress={() => setShowPassword((value) => !value)}
                 accessibilityLabel={
-                  showPassword ? "Ocultar senha" : "Mostrar senha"
+                  showPassword ? t("auth.hide_password") : t("auth.show_password")
                 }
               >
                 <InputIcon as={showPassword ? EyeOff : Eye} />
@@ -155,7 +157,7 @@ export function RegisterScreen() {
           {/* Campo de Confirmar Senha */}
           <VStack space="xs">
             <Text size="sm" bold className="text-typography-700 ml-1">
-              Confirmar senha
+              {t("auth.confirm_password")}
             </Text>
             <Input
               size="md"
@@ -167,7 +169,7 @@ export function RegisterScreen() {
                 <InputIcon as={Lock} className="text-typography-500" />
               </InputSlot>
               <InputField
-                placeholder="Repita sua senha"
+                placeholder={t("auth.confirm_password_placeholder")}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry={!showConfirmPassword}
@@ -178,7 +180,9 @@ export function RegisterScreen() {
                   setShowConfirmPassword((value) => !value)
                 }
                 accessibilityLabel={
-                  showConfirmPassword ? "Ocultar senha" : "Mostrar senha"
+                  showConfirmPassword
+                    ? t("auth.hide_password")
+                    : t("auth.show_password")
                 }
               >
                 <InputIcon as={showConfirmPassword ? EyeOff : Eye} />
@@ -186,7 +190,7 @@ export function RegisterScreen() {
             </Input>
             {showPasswordMismatch ? (
               <Text size="xs" className="text-error-600 ml-1">
-                As senhas não conferem.
+                {t("auth.password_mismatch")}
               </Text>
             ) : null}
           </VStack>
@@ -204,14 +208,14 @@ export function RegisterScreen() {
           >
             {loading && <ButtonSpinner className="mr-2" />}
             <ButtonText className="font-bold">
-              {loading ? "Criando conta..." : "Cadastrar agora"}
+              {loading ? t("auth.creating_account") : t("auth.register_button")}
             </ButtonText>
           </Button>
 
           <Center>
             <HStack space="xs" className="items-center">
               <Text size="sm" className="text-typography-600">
-                Já possui uma conta?
+                {t("auth.already_have_account")}
               </Text>
               <Button
                 variant="link"
@@ -219,7 +223,7 @@ export function RegisterScreen() {
                 className="p-0 h-auto"
               >
                 <ButtonText size="sm" className="text-primary-600 font-bold">
-                  Faça login
+                  {t("auth.login_link")}
                 </ButtonText>
               </Button>
             </HStack>
@@ -233,7 +237,7 @@ export function RegisterScreen() {
           className="mt-8 border-none"
           onPress={() => router.replace("/")}
         >
-          <ButtonText className="text-typography-400">Voltar</ButtonText>
+          <ButtonText className="text-typography-400">{t("common.back")}</ButtonText>
         </Button>
       </VStack>
     </Box>

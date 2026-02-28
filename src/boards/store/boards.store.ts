@@ -1,6 +1,7 @@
-Ôªøimport { create } from "zustand";
+import { create } from "zustand";
 import type { Board, BoardsQuery, Tag } from "../types/boards";
 import * as repo from "../data/boards.repository";
+import i18n from "@/src/utils/i18n";
 import { normalizeText } from "../utils/normalize";
 
 type BoardsState = {
@@ -118,7 +119,7 @@ export const useBoardsStore = create<BoardsState>((set, get) => ({
         set({ rawItems: rows, items: next, loading: false, error: null });
       },
       (err) => {
-        set({ error: err.message ?? "Falha ao carregar boards.", loading: false });
+        set({ error: err.message ?? i18n.t("boards.errors.load_boards"), loading: false });
       },
     );
 
@@ -135,7 +136,7 @@ export const useBoardsStore = create<BoardsState>((set, get) => ({
   createBoard: async (input) => {
     const userId = get().userId;
     if (!userId) {
-      set({ error: "Usu√°rio n√£o autenticado." });
+      set({ error: "Usu·rio n„o autenticado." });
       return;
     }
 
@@ -150,7 +151,7 @@ export const useBoardsStore = create<BoardsState>((set, get) => ({
         doneColumnIds: input.doneColumnIds,
       });
     } catch (err: any) {
-      set({ error: err?.message ?? "Falha ao criar board.", loading: false });
+      set({ error: err?.message ?? i18n.t("boards.errors.create_board"), loading: false });
     }
   },
 
@@ -159,7 +160,7 @@ export const useBoardsStore = create<BoardsState>((set, get) => ({
     try {
       await repo.updateBoard(id, patch);
     } catch (err: any) {
-      set({ error: err?.message ?? "Falha ao atualizar board.", loading: false });
+      set({ error: err?.message ?? i18n.t("boards.errors.update_board"), loading: false });
     }
   },
 
@@ -168,7 +169,7 @@ export const useBoardsStore = create<BoardsState>((set, get) => ({
     try {
       await repo.setBoardStatus(id, "archived");
     } catch (err: any) {
-      set({ error: err?.message ?? "Falha ao arquivar board.", loading: false });
+      set({ error: err?.message ?? i18n.t("boards.errors.archive_board"), loading: false });
     }
   },
 
@@ -177,7 +178,7 @@ export const useBoardsStore = create<BoardsState>((set, get) => ({
     try {
       await repo.setBoardStatus(id, "active");
     } catch (err: any) {
-      set({ error: err?.message ?? "Falha ao desarquivar board.", loading: false });
+      set({ error: err?.message ?? i18n.t("boards.errors.unarchive_board"), loading: false });
     }
   },
 }));

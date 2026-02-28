@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
 import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";
 import { HStack } from "@/components/ui/hstack";
@@ -20,10 +21,12 @@ export function ColumnFormModal({
   visible,
   title,
   initialTitle,
-  confirmLabel = "Salvar",
+  confirmLabel,
   onClose,
   onConfirm,
 }: ColumnFormModalProps) {
+  const { t } = useTranslation();
+  const resolvedConfirmLabel = confirmLabel ?? t("common.save");
   const [value, setValue] = useState("");
 
   useEffect(() => {
@@ -45,7 +48,7 @@ export function ColumnFormModal({
 
             <Input className="border-outline-300 rounded-xl">
               <InputField
-                placeholder="Título da linha"
+                placeholder={t("boards.columnForm.title_placeholder")}
                 value={value}
                 onChangeText={setValue}
                 maxLength={60}
@@ -54,7 +57,7 @@ export function ColumnFormModal({
 
             <HStack space="sm" className="justify-end">
               <Button variant="outline" onPress={onClose} size="sm">
-                <ButtonText>Cancelar</ButtonText>
+                <ButtonText>{t("common.cancel")}</ButtonText>
               </Button>
               <Button
                 size="sm"
@@ -62,7 +65,7 @@ export function ColumnFormModal({
                 isDisabled={!canSubmit}
                 className={!canSubmit ? "bg-background-300" : undefined}
               >
-                <ButtonText>{confirmLabel}</ButtonText>
+                <ButtonText>{resolvedConfirmLabel}</ButtonText>
               </Button>
             </HStack>
           </VStack>
@@ -71,4 +74,3 @@ export function ColumnFormModal({
     </Modal>
   );
 }
-

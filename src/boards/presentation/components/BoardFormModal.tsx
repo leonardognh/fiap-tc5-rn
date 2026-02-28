@@ -1,5 +1,6 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
 import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";
 import { HStack } from "@/components/ui/hstack";
@@ -26,13 +27,15 @@ type BoardFormModalProps = {
 export function BoardFormModal({
   visible,
   title,
-  confirmLabel = "Salvar",
+  confirmLabel,
   initial,
   columns = [],
   submitting,
   onClose,
   onConfirm,
 }: BoardFormModalProps) {
+  const { t } = useTranslation();
+  const resolvedConfirmLabel = confirmLabel ?? t("common.save");
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
@@ -66,9 +69,7 @@ export function BoardFormModal({
         .then((tags) => {
           if (cancelled) return;
           const tagsMap = new Map(tags.map((tag) => [tag.id, tag]));
-          const filled = initialIds.map(
-            (id) => tagsMap.get(id) ?? { id, name: id },
-          );
+          const filled = initialIds.map((id) => tagsMap.get(id) ?? { id, name: id });
           setSelectedTags(filled);
         })
         .catch(() => {
@@ -144,14 +145,14 @@ export function BoardFormModal({
                 {title}
               </Heading>
               <Text size="sm" className="text-typography-500">
-                Título obrigatório (3-60 caracteres). Descrição opcional.
+                {t("boards.form.helper")}
               </Text>
             </VStack>
 
             <VStack space="sm">
               <Input className="border-outline-300 rounded-xl">
                 <InputField
-                  placeholder="Título do board"
+                  placeholder={t("boards.form.title_placeholder")}
                   value={formTitle}
                   onChangeText={setFormTitle}
                   maxLength={60}
@@ -160,7 +161,7 @@ export function BoardFormModal({
 
               <Input className="border-outline-300 rounded-xl min-h-[120px] items-start">
                 <InputField
-                  placeholder="Descrição (opcional)"
+                  placeholder={t("boards.form.description_placeholder")}
                   value={formDescription}
                   onChangeText={setFormDescription}
                   maxLength={280}
@@ -174,20 +175,20 @@ export function BoardFormModal({
               {columns.length > 0 ? (
                 <>
                   <ColumnsMultiSelect
-                    label="Não iniciadas"
+                    label={t("boards.form.not_started_label")}
                     value={notStartedColumnIds}
                     options={columns}
                     onChange={handleNotStartedChange}
                     disabled={!!submitting}
-                    placeholder="Selecione colunas"
+                    placeholder={t("boards.form.select_columns")}
                   />
                   <ColumnsMultiSelect
-                    label="Done"
+                    label={t("boards.form.done_label")}
                     value={doneColumnIds}
                     options={columns}
                     onChange={handleDoneChange}
                     disabled={!!submitting}
-                    placeholder="Selecione colunas"
+                    placeholder={t("boards.form.select_columns")}
                   />
                 </>
               ) : null}
@@ -201,7 +202,7 @@ export function BoardFormModal({
 
             <HStack space="sm" className="justify-end">
               <Button variant="outline" onPress={onClose} size="sm">
-                <ButtonText>Cancelar</ButtonText>
+                <ButtonText>{t("common.cancel")}</ButtonText>
               </Button>
               <Button
                 size="sm"
@@ -209,7 +210,7 @@ export function BoardFormModal({
                 isDisabled={!canSubmit}
                 className={!canSubmit ? "bg-background-300" : undefined}
               >
-                <ButtonText>{confirmLabel}</ButtonText>
+                <ButtonText>{resolvedConfirmLabel}</ButtonText>
               </Button>
             </HStack>
           </VStack>

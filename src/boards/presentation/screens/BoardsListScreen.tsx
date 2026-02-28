@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
 import {
   Archive,
   ArchiveRestore,
@@ -39,6 +40,7 @@ type ConfirmState = {
 };
 
 export function BoardsListScreen() {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const {
     items,
@@ -101,22 +103,27 @@ export function BoardsListScreen() {
 
   const statusOptions = useMemo(
     () => [
-      { value: "all", label: "Todos" },
-      { value: "active", label: "Ativos" },
-      { value: "archived", label: "Arquivados" },
+      { value: "all", label: t("boards.list.status_all") },
+      { value: "active", label: t("boards.list.status_active") },
+      { value: "archived", label: t("boards.list.status_archived") },
     ],
-    [],
+    [t],
   );
 
   const confirmAction = (state: ConfirmState) => setConfirmState(state);
 
   const onConfirmArchive = (board: Board) => {
     const isArchive = board.status !== "archived";
-    const actionLabel = isArchive ? "arquivar" : "desarquivar";
+    const actionLabel = isArchive
+      ? t("boards.list.archive")
+      : t("boards.list.unarchive");
     confirmAction({
-      title: "Confirmar",
-      message: `Deseja ${actionLabel} o board "${board.title}"?`,
-      confirmLabel: isArchive ? "Arquivar" : "Desarquivar",
+      title: t("boards.list.confirm_archive_title"),
+      message: t("boards.list.confirm_archive_message", {
+        action: actionLabel.toLowerCase(),
+        title: board.title,
+      }),
+      confirmLabel: actionLabel,
       destructive: isArchive,
       onConfirm: () =>
         isArchive ? archiveBoard(board.id) : unarchiveBoard(board.id),
@@ -132,7 +139,7 @@ export function BoardsListScreen() {
               <InputIcon as={Search} />
             </InputSlot>
             <InputField
-              placeholder="Buscar board"
+              placeholder={t("boards.list.search_placeholder")}
               value={query.search}
               onChangeText={(value) => setQuery({ search: value })}
             />
@@ -167,7 +174,7 @@ export function BoardsListScreen() {
               onPress={() => setQuery({ mine: !query.mine })}
               className={query.mine ? "bg-primary-600" : undefined}
             >
-              <ButtonText>Meus boards</ButtonText>
+              <ButtonText>{t("boards.list.my_boards")}</ButtonText>
             </Button>
           </HStack>
         ) : null}
@@ -185,15 +192,15 @@ export function BoardsListScreen() {
           contentContainerStyle={{ paddingBottom: 32 }}
         >
           {loading && items.length === 0 ? (
-            <Text className="text-typography-500">Carregando...</Text>
+            <Text className="text-typography-500">{t("common.loading")}</Text>
           ) : null}
 
           {!loading && items.length === 0 ? (
             <Box className="rounded-2xl border border-dashed border-outline-200 p-6">
               <Text className="text-typography-600">
                 {query.status === "archived"
-                  ? "Nenhum board arquivado."
-                  : "Nenhum board encontrado. Crie o primeiro para começar."}
+                  ? t("boards.list.empty_archived")
+                  : t("boards.list.empty_default")}
               </Text>
             </Box>
           ) : null}
@@ -250,8 +257,8 @@ export function BoardsListScreen() {
                             >
                               <Text size="xs" className="text-typography-700">
                                 {board.status === "archived"
-                                  ? "Arquivado"
-                                  : "Ativo"}
+                                  ? t("boards.list.status_archived_label")
+                                  : t("boards.list.status_active_label")}
                               </Text>
                             </Box>
                           </VStack>
@@ -305,7 +312,7 @@ export function BoardsListScreen() {
                         </Box>
 
                         <Text size="xs" className="text-typography-400">
-                          Atualizado em {new Date(board.updatedAt).toLocaleDateString()}
+                          {t("common.updated_at", { date: new Date(board.updatedAt).toLocaleDateString() })}
                         </Text>
                       </VStack>
                     </Box>
@@ -353,7 +360,7 @@ export function BoardsListScreen() {
                 >
                   <HStack space="sm" className="items-center py-2">
                     <Pencil size={16} color="#475569" />
-                    <Text className="text-typography-900">Editar</Text>
+                    <Text className="text-typography-900">{t("boards.list.menu_edit")}</Text>
                   </HStack>
                 </Pressable>
               ) : null}
@@ -374,8 +381,8 @@ export function BoardsListScreen() {
                   )}
                   <Text className="text-typography-900">
                     {selectedBoard?.status === "archived"
-                      ? "Desarquivar"
-                      : "Arquivar"}
+                      ? t("boards.list.menu_unarchive")
+                      : t("boards.list.menu_archive")}
                   </Text>
                 </HStack>
               </Pressable>
@@ -386,8 +393,8 @@ export function BoardsListScreen() {
 
       <BoardFormModal
         visible={createOpen}
-        title="Novo board"
-        confirmLabel="Criar"
+        title={t("boards.list.new_board_title")}
+        confirmLabel={t("boards.list.create_board")}
         onClose={() => setCreateOpen(false)}
         onConfirm={async (input) => {
           await createBoard(input);
@@ -397,8 +404,8 @@ export function BoardsListScreen() {
 
       <BoardFormModal
         visible={!!editing}
-        title="Editar board"
-        confirmLabel="Salvar"
+        title={t("boards.list.edit_board_title")}
+        confirmLabel={t("boards.list.save_board")}
         columns={editingColumns}
         initial={
           editing

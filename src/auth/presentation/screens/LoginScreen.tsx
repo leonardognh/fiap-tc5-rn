@@ -10,11 +10,17 @@ import { VStack } from "@/components/ui/vstack";
 import { router } from "expo-router";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/auth.store";
+import { useSettingsStore } from "@/src/settings/store/settings.store";
 
 export function LoginScreen() {
   const { login, loading, error, clearError } = useAuthStore();
   const toast = useToast();
+  const { t } = useTranslation();
+  const toastEnabled = useSettingsStore(
+    (s) => s.preferences.cognitiveAlerts?.enabled ?? true,
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -28,51 +34,50 @@ export function LoginScreen() {
     try {
       await login(email, password);
     } catch (e) {
-      /* Erro já no store */
+      /* Erro j� no store */
     }
   };
 
   useEffect(() => {
     if (!error) return;
-    toast.show({
-      placement: "top",
-      duration: 3000,
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-          <ToastTitle>Não foi possível fazer o login</ToastTitle>
-          <ToastDescription>{error}</ToastDescription>
-        </Toast>
-      ),
-    });
+    if (toastEnabled) {
+      toast.show({
+        placement: "top",
+        duration: 3000,
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+            <ToastTitle>{t("auth.login_error_title")}</ToastTitle>
+            <ToastDescription>{error}</ToastDescription>
+          </Toast>
+        ),
+      });
+    }
     clearError();
-  }, [error, toast, clearError]);
+  }, [error, toast, clearError, toastEnabled, t]);
 
   return (
     <Box className="flex-1 bg-background-0 p-6 justify-center">
       <VStack space="xl" className="w-full max-w-[440px] mx-auto">
         <VStack space="xs">
           <Heading size="3xl" className="text-typography-900">
-            Bem-vindo
+            {t("auth.login_title")}
           </Heading>
           <Text size="md" className="text-typography-500">
-            Faça login para continuar
+            {t("auth.login_subtitle")}
           </Text>
         </VStack>
 
         <VStack space="lg" className="mt-4">
           <VStack space="xs">
             <Text size="sm" bold className="text-typography-700 ml-1">
-              Email
+              {t("auth.email_label")}
             </Text>
-            <Input
-              size="md"
-              className="border-outline-300 rounded-xl bg-transparent"
-            >
+            <Input size="md" className="border-outline-300 rounded-xl bg-transparent">
               <InputSlot className="pl-3">
                 <InputIcon as={Mail} />
               </InputSlot>
               <InputField
-                placeholder="seu@email.com"
+                placeholder={t("auth.email_placeholder")}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -84,7 +89,7 @@ export function LoginScreen() {
           <VStack space="xs">
             <HStack className="justify-between items-center px-1">
               <Text size="sm" bold className="text-typography-700">
-                Senha
+                {t("auth.password_label")}
               </Text>
               <Button
                 variant="link"
@@ -92,19 +97,16 @@ export function LoginScreen() {
                 onPress={() => router.push("/forgot-password")}
               >
                 <ButtonText size="xs" className="text-primary-600">
-                  Esqueceu a senha?
+                  {t("auth.forgot_password")}
                 </ButtonText>
               </Button>
             </HStack>
-            <Input
-              size="md"
-              className="border-outline-300 rounded-xl bg-transparent"
-            >
+            <Input size="md" className="border-outline-300 rounded-xl bg-transparent">
               <InputSlot className="pl-3">
                 <InputIcon as={Lock} />
               </InputSlot>
               <InputField
-                placeholder="Sua senha"
+                placeholder={t("auth.password_placeholder")}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -113,7 +115,7 @@ export function LoginScreen() {
                 className="pr-3"
                 onPress={() => setShowPassword((value) => !value)}
                 accessibilityLabel={
-                  showPassword ? "Ocultar senha" : "Mostrar senha"
+                  showPassword ? t("auth.hide_password") : t("auth.show_password")
                 }
               >
                 <InputIcon as={showPassword ? EyeOff : Eye} />
@@ -130,13 +132,13 @@ export function LoginScreen() {
             className={`rounded-xl ${!canSubmit ? "bg-background-300" : "bg-primary-600"}`}
           >
             {loading && <ButtonSpinner className="mr-2" />}
-            <ButtonText className="font-bold">Entrar na conta</ButtonText>
+            <ButtonText className="font-bold">{t("auth.login_button")}</ButtonText>
           </Button>
 
           <Center>
             <HStack space="xs" className="items-center">
               <Text size="sm" className="text-typography-600">
-                Não tem uma conta?
+                {t("auth.no_account")}
               </Text>
               <Button
                 variant="link"
@@ -144,7 +146,7 @@ export function LoginScreen() {
                 className="p-0 h-auto"
               >
                 <ButtonText size="sm" className="text-primary-600 font-bold">
-                  Cadastre-se
+                  {t("auth.register_link")}
                 </ButtonText>
               </Button>
             </HStack>

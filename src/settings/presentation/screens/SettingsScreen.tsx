@@ -82,7 +82,7 @@ export function SettingsScreen() {
   useEffect(() => {
     if (!error) return;
     Alert.alert(t("settings.errors.title"), error, [
-      { text: "OK", onPress: clearError },
+      { text: t("common.ok"), onPress: clearError },
     ]);
   }, [error, clearError, t]);
 
