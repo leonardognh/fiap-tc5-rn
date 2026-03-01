@@ -211,8 +211,8 @@ export const resources = {
           helper: "Título obrigatório (3-60 caracteres). Descrição opcional.",
           title_placeholder: "Título do board",
           description_placeholder: "Descrição (opcional)",
-          not_started_label: "Não iniciadas",
-          done_label: "Done",
+          not_started_label: "Colunas de Início",
+          done_label: "Colunas de Conclusão",
           select_columns: "Selecione colunas",
         },
         columnForm: {
@@ -513,8 +513,8 @@ export const resources = {
           helper: "Title required (3-60 characters). Description optional.",
           title_placeholder: "Board title",
           description_placeholder: "Description (optional)",
-          not_started_label: "Not started",
-          done_label: "Done",
+          not_started_label: "Columns of start",
+          done_label: "Columns of completion",
           select_columns: "Select columns",
         },
         columnForm: {
